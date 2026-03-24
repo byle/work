@@ -1,9 +1,29 @@
+import { useMemo, useState } from 'react';
+import { Layout } from './components/Layout';
+import { ProjectsPage } from './pages/ProjectsPage';
+import { SetupListsPage } from './pages/SetupListsPage';
+import { WorkOrdersPage } from './pages/WorkOrdersPage';
+
+type TabKey = 'projects' | 'workOrders' | 'setupLists';
+
 export default function App() {
+  const [activeTab, setActiveTab] = useState<TabKey>('projects');
+
+  const content = useMemo(() => {
+    if (activeTab === 'projects') {
+      return <ProjectsPage />;
+    }
+
+    if (activeTab === 'workOrders') {
+      return <WorkOrdersPage />;
+    }
+
+    return <SetupListsPage />;
+  }, [activeTab]);
+
   return (
-    <main style={{ fontFamily: sans-serif, padding: 24 }}>
-      <h1>舞台租赁工单系统 · Web 后台</h1>
-      <p>首期包含项目管理、工单管理、搭建清单、模板管理与导入能力。</p>
-    </main>
+    <Layout activeTab={activeTab} onChangeTab={setActiveTab}>
+      {content}
+    </Layout>
   );
 }
-
