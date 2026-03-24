@@ -66,3 +66,16 @@ export function createSetupListItem(setupListId: number, payload: Record<string,
     body: JSON.stringify(payload)
   });
 }
+
+export function updateSetupListItem(itemId: number, payload: Record<string, unknown>) {
+  return request<SetupListItem>(`/api/setup-lists/items/${itemId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteSetupListItem(itemId: number) {
+  return request<boolean>(`/api/setup-lists/items/${itemId}`, {
+    method: 'DELETE'
+  });
+}

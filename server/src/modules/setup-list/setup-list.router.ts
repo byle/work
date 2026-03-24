@@ -4,9 +4,11 @@ import { success } from '../../shared/http';
 import {
   createSetupList,
   createSetupListItem,
+  deleteSetupListItem,
   getSetupListById,
   listSetupListItems,
-  listSetupLists
+  listSetupLists,
+  updateSetupListItem
 } from './setup-list.repository';
 
 export const setupListRouter = Router();
@@ -61,5 +63,23 @@ setupListRouter.post(
     });
 
     return success(res, item, 'setup list item created');
+  })
+);
+
+setupListRouter.put(
+  '/items/:itemId',
+  asyncHandler(async (req, res) => {
+    const item = await updateSetupListItem(Number(req.params.itemId), req.body);
+
+    return success(res, item, 'setup list item updated');
+  })
+);
+
+setupListRouter.delete(
+  '/items/:itemId',
+  asyncHandler(async (req, res) => {
+    const deleted = await deleteSetupListItem(Number(req.params.itemId));
+
+    return success(res, deleted, 'setup list item deleted');
   })
 );

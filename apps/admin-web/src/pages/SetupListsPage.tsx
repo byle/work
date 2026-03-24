@@ -8,9 +8,11 @@ import { PageSection } from '../components/PageSection';
 import {
   createSetupList,
   createSetupListItem,
+  deleteSetupListItem,
   fetchProjects,
   fetchSetupListItems,
-  fetchSetupLists
+  fetchSetupLists,
+  updateSetupListItem
 } from '../lib/api';
 import { Project, SetupList, SetupListItem } from '../types/api';
 
@@ -23,6 +25,7 @@ const initialSetupListForm = {
 };
 
 const initialItemForm = {
+  id: '',
   setupListId: '',
   sequenceNo: '',
   categoryName: '',
@@ -160,7 +163,7 @@ export function SetupListsPage() {
     setItemSubmitting(true);
 
     try {
-      await createSetupListItem(Number(itemForm.setupListId), {
+      const payload = {
         sequenceNo: itemForm.sequenceNo,
         categoryName: itemForm.categoryName,
         itemName: itemForm.itemName,
@@ -169,16 +172,61 @@ export function SetupListsPage() {
         unit: itemForm.unit,
         remark: itemForm.remark,
         sortOrder: Number(itemForm.sortOrder)
-      });
-      setItemForm((current) => ({
+      };
+
+      if (itemForm.id) {
+        await updateSetupListItem(Number(itemForm.id), payload);
+      } else {
+        await createSetupListItem(Number(itemForm.setupListId), payload);
+      }
+
+      const currentSetupListId = itemForm.setupListId;
+      setItemForm({
         ...initialItemForm,
-        setupListId: current.setupListId
-      }));
-      await loadItems(itemForm.setupListId);
+        setupListId: currentSetupListId
+      });
+      await loadItems(currentSetupListId);
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setItemSubmitting(false);
+    }
+  };
+
+  const handleEditItem = (item: SetupListItem) => {
+    setItemForm({
+      id: String(item.id),
+      setupListId: String(item.setupListId),
+      sequenceNo: item.sequenceNo || '',
+      categoryName: item.categoryName || '',
+      itemName: item.itemName,
+      specification: item.specification || '',
+      quantity: String(item.quantity),
+      unit: item.unit,
+      remark: item.remark || '',
+      sortOrder: String(item.sortOrder)
+    });
+  };
+
+  const handleDeleteItem = async (item: SetupListItem) => {
+    const confirmed = window.confirm(`确认删除明细「${item.itemName}」吗？`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteSetupListItem(item.id);
+      await loadItems(String(item.setupListId));
+
+      if (itemForm.id === String(item.id)) {
+        setItemForm({
+          ...initialItemForm,
+          setupListId: String(item.setupListId)
+        });
+      }
+    } catch (err) {
+      setError((err as Error).message);
     }
   };
 
@@ -192,14 +240,19 @@ export function SetupListsPage() {
         <FormField label="活动日期快照" type="date" value={form.eventDateSnapshot} onChange={(e) => setForm({ ...form, eventDateSnapshot: e.target.value })} required />
       </FormCard>
 
-      <FormCard title="新增清单明细" description="为指定清单录入搭建项、规格、数量和备注。" onSubmit={handleItemSubmit} submitting={itemSubmitting}>
+      <FormCard
+        title={itemForm.id ? '编辑清单明细' : '新增清单明细'}
+        description="为指定清单录入搭建项、规格、数量和备注。"
+        onSubmit={handleItemSubmit}
+        submitting={itemSubmitting}
+      >
         <FormSelect
           label="所属清单"
           options={setupListOptions}
           value={itemForm.setupListId}
           onChange={async (e) => {
             const setupListId = e.target.value;
-            setItemForm({ ...itemForm, setupListId });
+            setItemForm({ ...itemForm, id: '', setupListId });
             await loadItems(setupListId);
           }}
           required
@@ -243,7 +296,27 @@ export function SetupListsPage() {
               { key: 'quantity', title: '数量' },
               { key: 'unit', title: '单位' },
               { key: 'remark', title: '备注' },
-              { key: 'executeStatus', title: '执行状态' }
+              { key: 'executeStatus', title: '执行状态' },
+              {
+                key: 'action',
+                title: '操作',
+                render: (item) => (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => handleEditItem(item)}
+                      style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => handleDeleteItem(item)}
+                      style={{ border: 'none', background: '#fee2e2', color: '#b91c1c', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}
+                    >
+                      删除
+                    </button>
+                  </div>
+                )
+              }
             ]}
           />
         </>

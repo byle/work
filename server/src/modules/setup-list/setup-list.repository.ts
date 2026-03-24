@@ -155,3 +155,57 @@ export async function createSetupListItem(input: CreateSetupListItemInput): Prom
 
   return mapSetupListItem(result.rows[0] as Record<string, unknown>);
 }
+
+export async function updateSetupListItem(
+  id: number,
+  input: Omit<CreateSetupListItemInput, 'setupListId'>
+): Promise<SetupListItemRecord | null> {
+  const result = await pool.query(
+    `UPDATE setup_list_items
+     SET parent_id = $2,
+         sequence_no = $3,
+         category_name = $4,
+         item_name = $5,
+         specification = $6,
+         quantity = $7,
+         unit = $8,
+         remark = $9,
+         assignee_id = $10,
+         sort_order = $11,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND is_deleted = FALSE
+     RETURNING id, setup_list_id, parent_id, sequence_no, category_name, item_name, specification,
+               quantity, unit, remark, execute_status, assignee_id, completed_at, sort_order`,
+    [
+      id,
+      input.parentId ?? null,
+      input.sequenceNo ?? null,
+      input.categoryName ?? null,
+      input.itemName,
+      input.specification ?? null,
+      input.quantity,
+      input.unit,
+      input.remark ?? null,
+      input.assigneeId ?? null,
+      input.sortOrder ?? 0
+    ]
+  );
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  return mapSetupListItem(result.rows[0] as Record<string, unknown>);
+}
+
+export async function deleteSetupListItem(id: number): Promise<boolean> {
+  const result = await pool.query(
+    `UPDATE setup_list_items
+     SET is_deleted = TRUE,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND is_deleted = FALSE`,
+    [id]
+  );
+
+  return (result.rowCount ?? 0) > 0;
+}
