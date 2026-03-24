@@ -44,3 +44,20 @@ export type SetupList = {
   remark: string | null;
   status: string;
 };
+
+export type SetupListItem = {
+  id: number;
+  setupListId: number;
+  parentId: number | null;
+  sequenceNo: string | null;
+  categoryName: string | null;
+  itemName: string;
+  specification: string | null;
+  quantity: number;
+  unit: string;
+  remark: string | null;
+  executeStatus: string;
+  assigneeId: number | null;
+  completedAt: string | null;
+  sortOrder: number;
+};

@@ -41,3 +41,17 @@ export type CreateSetupListInput = {
   remark?: string;
   status?: string;
 };
+
+export type CreateSetupListItemInput = {
+  setupListId: number;
+  parentId?: number;
+  sequenceNo?: string;
+  categoryName?: string;
+  itemName: string;
+  specification?: string;
+  quantity: number;
+  unit: string;
+  remark?: string;
+  assigneeId?: number;
+  sortOrder?: number;
+};

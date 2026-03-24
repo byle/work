@@ -3,6 +3,7 @@ import { asyncHandler } from '../../shared/async-handler';
 import { success } from '../../shared/http';
 import {
   createSetupList,
+  createSetupListItem,
   getSetupListById,
   listSetupListItems,
   listSetupLists
@@ -48,5 +49,17 @@ setupListRouter.get(
     const items = await listSetupListItems(Number(req.params.id));
 
     return success(res, items);
+  })
+);
+
+setupListRouter.post(
+  '/:id/items',
+  asyncHandler(async (req, res) => {
+    const item = await createSetupListItem({
+      ...req.body,
+      setupListId: Number(req.params.id)
+    });
+
+    return success(res, item, 'setup list item created');
   })
 );

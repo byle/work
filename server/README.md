@@ -47,6 +47,7 @@ pnpm --filter server dev
 - `POST /api/setup-lists`
 - `GET /api/setup-lists/:id`
 - `GET /api/setup-lists/:id/items`
+- `POST /api/setup-lists/:id/items`
 
 ## 下一步规划
 

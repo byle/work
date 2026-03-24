@@ -1,5 +1,10 @@
 import { pool } from '../../db/pool';
-import { CreateSetupListInput, SetupListItemRecord, SetupListRecord } from './setup-list.types';
+import {
+  CreateSetupListInput,
+  CreateSetupListItemInput,
+  SetupListItemRecord,
+  SetupListRecord
+} from './setup-list.types';
 
 function mapSetupList(row: Record<string, unknown>): SetupListRecord {
   return {
@@ -111,4 +116,42 @@ export async function createSetupList(input: CreateSetupListInput): Promise<Setu
   );
 
   return mapSetupList(result.rows[0] as Record<string, unknown>);
+}
+
+export async function createSetupListItem(input: CreateSetupListItemInput): Promise<SetupListItemRecord> {
+  const result = await pool.query(
+    `INSERT INTO setup_list_items (
+      setup_list_id,
+      parent_id,
+      sequence_no,
+      category_name,
+      item_name,
+      specification,
+      quantity,
+      unit,
+      remark,
+      execute_status,
+      assignee_id,
+      sort_order
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', $10, $11
+    )
+    RETURNING id, setup_list_id, parent_id, sequence_no, category_name, item_name, specification,
+              quantity, unit, remark, execute_status, assignee_id, completed_at, sort_order`,
+    [
+      input.setupListId,
+      input.parentId ?? null,
+      input.sequenceNo ?? null,
+      input.categoryName ?? null,
+      input.itemName,
+      input.specification ?? null,
+      input.quantity,
+      input.unit,
+      input.remark ?? null,
+      input.assigneeId ?? null,
+      input.sortOrder ?? 0
+    ]
+  );
+
+  return mapSetupListItem(result.rows[0] as Record<string, unknown>);
 }
