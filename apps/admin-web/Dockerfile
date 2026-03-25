@@ -1,11 +1,13 @@
 FROM node:20-alpine AS base
-RUN corepack enable
+RUN npm install -g pnpm@9.0.0
 WORKDIR /app
 
 FROM base AS deps
 COPY package.json pnpm-workspace.yaml ./
+COPY server/package.json ./server/package.json
 COPY apps/admin-web/package.json ./apps/admin-web/package.json
-RUN pnpm install --filter admin-web... --frozen-lockfile=false
+COPY apps/mobile-h5/package.json ./apps/mobile-h5/package.json
+RUN pnpm install --frozen-lockfile=false
 
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
