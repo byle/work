@@ -6,7 +6,7 @@
   "scripts": {
     "dev:server": "pnpm --filter server dev",
     "dev:admin": "pnpm --filter admin-web dev",
-    "dev:mobile": "pnpm --filter mobile-h5 dev"
+    "dev:mobile": "pnpm --filter mobile-h5 dev",
+    "build": "pnpm --filter server build && pnpm --filter admin-web build && pnpm --filter mobile-h5 build"
   }
 }
-

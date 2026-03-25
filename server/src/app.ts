@@ -1,4 +1,5 @@
 import express from 'express';
+import { env } from './config/env';
 import { authRouter } from './modules/auth/auth.router';
 import { projectRouter } from './modules/project/project.router';
 import { setupListRouter } from './modules/setup-list/setup-list.router';
@@ -7,6 +8,24 @@ import { failure } from './shared/http';
 
 export function createApp() {
   const app = express();
+
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+
+    if (origin && env.corsOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+    }
+
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+
+    next();
+  });
 
   app.use(express.json());
 
