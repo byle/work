@@ -31,3 +31,7 @@ export async function fetchTodoSummary(): Promise<TodoSummary> {
 export function fetchMyWorkOrders() {
   return request<PaginatedData<WorkOrder>>('/api/work-orders');
 }
+
+export function fetchWorkOrderDetail(workOrderId: number) {
+  return request<WorkOrder>(`/api/work-orders/${workOrderId}`);
+}

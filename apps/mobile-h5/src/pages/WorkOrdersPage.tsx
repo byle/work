@@ -4,7 +4,11 @@ import { StatusBanner } from '../components/StatusBanner';
 import { fetchMyWorkOrders } from '../lib/api';
 import { WorkOrder } from '../types/api';
 
-export function WorkOrdersPage() {
+type WorkOrdersPageProps = {
+  onOpenDetail: (workOrderId: number) => void;
+};
+
+export function WorkOrdersPage({ onOpenDetail }: WorkOrdersPageProps) {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +43,20 @@ export function WorkOrdersPage() {
             <div>优先级：{workOrder.priority}</div>
             <div>状态：{workOrder.status}</div>
           </div>
+          <button
+            onClick={() => onOpenDetail(workOrder.id)}
+            style={{
+              marginTop: 12,
+              border: 'none',
+              background: '#2563eb',
+              color: '#fff',
+              padding: '10px 12px',
+              borderRadius: 10,
+              width: '100%'
+            }}
+          >
+            查看详情
+          </button>
         </InfoCard>
       ))}
     </>

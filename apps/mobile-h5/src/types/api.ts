@@ -20,6 +20,11 @@ export type WorkOrder = {
   priority: string;
   status: string;
   assigneeId: number | null;
+  plannedStartAt?: string | null;
+  plannedEndAt?: string | null;
+  actualStartAt?: string | null;
+  actualEndAt?: string | null;
+  description?: string | null;
 };
 
 export type TodoSummary = {
