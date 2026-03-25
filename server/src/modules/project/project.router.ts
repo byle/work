@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/async-handler';
+import { requireAuth } from '../../shared/auth';
 import { success } from '../../shared/http';
 import { createProject, getProjectById, listProjects } from './project.repository';
 
 export const projectRouter = Router();
+
+projectRouter.use(requireAuth);
 
 projectRouter.get(
   '/',

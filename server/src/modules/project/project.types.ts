@@ -8,6 +8,8 @@ export type ProjectRecord = {
   rehearsalAt: string | null;
   moveOutAt: string | null;
   status: string;
+  templateId: number | null;
+  sourceType: string;
 };
 
 export type ProjectListItem = {
@@ -17,6 +19,8 @@ export type ProjectListItem = {
   location: string;
   eventDate: string;
   status: string;
+  templateId: number | null;
+  sourceType: string;
 };
 
 export type CreateProjectInput = {
@@ -30,4 +34,6 @@ export type CreateProjectInput = {
   managerId?: number;
   remark?: string;
   status?: string;
+  templateId?: number;
+  sourceType?: string;
 };

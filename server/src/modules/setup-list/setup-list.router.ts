@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/async-handler';
+import { requireAuth } from '../../shared/auth';
 import { success } from '../../shared/http';
 import {
   createSetupList,
@@ -12,6 +13,8 @@ import {
 } from './setup-list.repository';
 
 export const setupListRouter = Router();
+
+setupListRouter.use(requireAuth);
 
 setupListRouter.get(
   '/',

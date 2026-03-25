@@ -1,25 +1,36 @@
 import { ReactNode } from 'react';
+import { AuthUser } from '../types/api';
 
-type TabKey = 'projects' | 'workOrders' | 'setupLists';
+type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists';
 
 type LayoutProps = {
   activeTab: TabKey;
   onChangeTab: (tab: TabKey) => void;
   children: ReactNode;
+  user: AuthUser;
+  onLogout: () => void;
 };
 
 const tabs: Array<{ key: TabKey; label: string }> = [
+  { key: 'templates', label: '项目模板' },
   { key: 'projects', label: '项目列表' },
   { key: 'workOrders', label: '工单列表' },
   { key: 'setupLists', label: '清单列表' }
 ];
 
-export function Layout({ activeTab, onChangeTab, children }: LayoutProps) {
+export function Layout({ activeTab, onChangeTab, children, user, onLogout }: LayoutProps) {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f7fb', color: '#1f2937' }}>
-      <header style={{ padding: '20px 24px', background: '#111827', color: '#fff' }}>
-        <h1 style={{ margin: 0, fontSize: 24 }}>舞台租赁工单系统 · Web 后台</h1>
-        <p style={{ margin: '8px 0 0', color: '#d1d5db' }}>项目、工单、搭建清单基础管理</p>
+      <header style={{ padding: '20px 24px', background: '#111827', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 24 }}>舞台租赁工单系统 · Web 后台</h1>
+          <p style={{ margin: '8px 0 0', color: '#d1d5db' }}>项目模板、工单、搭建清单与权限管理</p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div>{user.realName}（{user.username}）</div>
+          <div style={{ color: '#d1d5db', fontSize: 12 }}>{user.roles.join(' / ')}</div>
+          <button onClick={onLogout} style={{ marginTop: 8, border: 'none', borderRadius: 8, padding: '8px 12px', cursor: 'pointer' }}>退出</button>
+        </div>
       </header>
       <div style={{ display: 'flex' }}>
         <aside style={{ width: 220, background: '#fff', borderRight: '1px solid #e5e7eb', padding: 16 }}>

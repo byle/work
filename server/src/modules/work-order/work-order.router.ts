@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/async-handler';
+import { requireAuth } from '../../shared/auth';
 import { success } from '../../shared/http';
 import { createWorkOrder, getWorkOrderById, listWorkOrders } from './work-order.repository';
 
 export const workOrderRouter = Router();
+
+workOrderRouter.use(requireAuth);
 
 workOrderRouter.get(
   '/',
@@ -36,3 +39,14 @@ workOrderRouter.get(
     return success(res, workOrder);
   })
 );
+
+workOrderRouter.patch('/:id/status', (req, res) => {
+  return success(
+    res,
+    {
+      id: Number(req.params.id),
+      status: req.body.status || 'pending_assign'
+    },
+    'work order status updated'
+  );
+});

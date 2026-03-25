@@ -1,21 +1,24 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { FormCard } from '../components/FormCard';
 import { FormField } from '../components/FormField';
+import { FormSelect } from '../components/FormSelect';
 import { LoadState } from '../components/LoadState';
 import { PageSection } from '../components/PageSection';
-import { createProject, fetchProjects } from '../lib/api';
-import { Project } from '../types/api';
+import { createProject, fetchProjects, fetchProjectTemplates } from '../lib/api';
+import { Project, ProjectTemplate } from '../types/api';
 
 const initialForm = {
   name: '',
   location: '',
   eventDate: '',
-  customerName: ''
+  customerName: '',
+  templateId: ''
 };
 
 export function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,9 +26,10 @@ export function ProjectsPage() {
 
   const loadProjects = () => {
     setLoading(true);
-    fetchProjects()
-      .then((data) => {
-        setProjects(data.list);
+    Promise.all([fetchProjects(), fetchProjectTemplates()])
+      .then(([projectData, templateData]) => {
+        setProjects(projectData.list);
+        setTemplates(templateData.list);
         setError(null);
       })
       .catch((err: Error) => {
@@ -40,6 +44,11 @@ export function ProjectsPage() {
     loadProjects();
   }, []);
 
+  const templateOptions = useMemo(
+    () => [{ label: '手动创建（不使用模板）', value: '' }, ...templates.map((item) => ({ label: item.name, value: String(item.id) }))],
+    [templates]
+  );
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
@@ -47,7 +56,8 @@ export function ProjectsPage() {
     try {
       await createProject({
         ...form,
-        status: 'draft'
+        status: 'draft',
+        templateId: form.templateId ? Number(form.templateId) : undefined
       });
       setForm(initialForm);
       loadProjects();
@@ -59,12 +69,13 @@ export function ProjectsPage() {
   };
 
   return (
-    <PageSection title="项目列表" description="查看活动项目、时间、地点和当前状态。">
-      <FormCard title="新建项目" description="录入项目基础信息，创建活动项目。" onSubmit={handleSubmit} submitting={submitting}>
+    <PageSection title="项目列表" description="查看活动项目、时间、地点和当前状态，可基于模板一键创建工单。">
+      <FormCard title="新建项目" description="录入项目基础信息；若选择模板，系统会自动生成默认工单。" onSubmit={handleSubmit} submitting={submitting}>
         <FormField label="项目名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
         <FormField label="项目地点" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
         <FormField label="活动日期" type="date" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} required />
         <FormField label="客户名称" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} />
+        <FormSelect label="项目模板" options={templateOptions} value={form.templateId} onChange={(e) => setForm({ ...form, templateId: e.target.value })} />
       </FormCard>
       <LoadState loading={loading} error={error} />
       {!loading && !error ? (
@@ -76,6 +87,7 @@ export function ProjectsPage() {
             { key: 'name', title: '项目名称' },
             { key: 'location', title: '项目地点' },
             { key: 'eventDate', title: '活动时间' },
+            { key: 'sourceType', title: '来源' },
             { key: 'status', title: '状态' }
           ]}
         />

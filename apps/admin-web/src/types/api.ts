@@ -11,6 +11,40 @@ export type PaginatedData<T> = {
   total: number;
 };
 
+export type AuthUser = {
+  id: number;
+  username: string;
+  realName: string;
+  roles: string[];
+};
+
+export type LoginResult = {
+  token: string;
+  user: AuthUser;
+};
+
+export type ProjectTemplate = {
+  id: number;
+  name: string;
+  category: string | null;
+  description: string | null;
+  version: number;
+  status: string;
+  workOrderTemplates: WorkOrderTemplate[];
+};
+
+export type WorkOrderTemplate = {
+  id: number;
+  projectTemplateId: number | null;
+  name: string;
+  type: string;
+  titleTemplate: string;
+  descriptionTemplate: string | null;
+  defaultPriority: string;
+  sortOrder: number;
+  status: string;
+};
+
 export type Project = {
   id: number;
   projectNo: string;
@@ -18,6 +52,8 @@ export type Project = {
   location: string;
   eventDate: string;
   status: string;
+  templateId: number | null;
+  sourceType: string;
 };
 
 export type WorkOrder = {
@@ -60,4 +96,11 @@ export type SetupListItem = {
   assigneeId: number | null;
   completedAt: string | null;
   sortOrder: number;
+};
+
+export type ImportResult = {
+  totalCount: number;
+  successCount: number;
+  failCount: number;
+  errors: string[];
 };

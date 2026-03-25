@@ -1,8 +1,10 @@
 import express from 'express';
 import { env } from './config/env';
 import { authRouter } from './modules/auth/auth.router';
+import { importExportRouter } from './modules/import-export/import-export.router';
 import { projectRouter } from './modules/project/project.router';
 import { setupListRouter } from './modules/setup-list/setup-list.router';
+import { templateRouter } from './modules/template/template.router';
 import { workOrderRouter } from './modules/work-order/work-order.router';
 import { failure } from './shared/http';
 
@@ -27,16 +29,18 @@ export function createApp() {
     next();
   });
 
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true, service: 'server' });
   });
 
   app.use('/api/auth', authRouter);
+  app.use('/api/project-templates', templateRouter);
   app.use('/api/projects', projectRouter);
   app.use('/api/work-orders', workOrderRouter);
   app.use('/api/setup-lists', setupListRouter);
+  app.use('/api/import-export', importExportRouter);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error(err);

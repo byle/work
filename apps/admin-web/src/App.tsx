@@ -1,15 +1,59 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Layout } from './components/Layout';
+import { clearToken, fetchMe, login, logout } from './lib/api';
+import { LoginPage } from './pages/LoginPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SetupListsPage } from './pages/SetupListsPage';
+import { TemplatesPage } from './pages/TemplatesPage';
 import { WorkOrdersPage } from './pages/WorkOrdersPage';
+import { AuthUser } from './types/api';
 
-type TabKey = 'projects' | 'workOrders' | 'setupLists';
+type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabKey>('projects');
+  const [activeTab, setActiveTab] = useState<TabKey>('templates');
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMe()
+      .then((data) => {
+        setUser(data);
+        setAuthError(null);
+      })
+      .catch(() => {
+        clearToken();
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleLogin = async (username: string, password: string) => {
+    try {
+      const result = await login({ username, password });
+      setUser(result.user);
+      setAuthError(null);
+    } catch (error) {
+      setAuthError((error as Error).message);
+      throw error;
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      clearToken();
+      setUser(null);
+    }
+  };
 
   const content = useMemo(() => {
+    if (activeTab === 'templates') {
+      return <TemplatesPage />;
+    }
+
     if (activeTab === 'projects') {
       return <ProjectsPage />;
     }
@@ -21,8 +65,16 @@ export default function App() {
     return <SetupListsPage />;
   }, [activeTab]);
 
+  if (loading) {
+    return <div style={{ padding: 24 }}>加载中...</div>;
+  }
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} error={authError} />;
+  }
+
   return (
-    <Layout activeTab={activeTab} onChangeTab={setActiveTab}>
+    <Layout activeTab={activeTab} onChangeTab={setActiveTab} user={user} onLogout={handleLogout}>
       {content}
     </Layout>
   );
