@@ -1,31 +1,11 @@
 import { createAuditLog } from '../audit/audit.repository';
+import { getDictionaryLabelMap } from '../dictionary/dictionary.repository';
 import { pool } from '../../db/pool';
 import { CreateWorkOrderInput, UpdateWorkOrderStatusInput, WorkOrderListItem, WorkOrderRecord } from './work-order.types';
 
 
-const workOrderTypeLabelMap: Record<string, string> = {
-  setup: '现场搭建',
-  survey: '现场勘察',
-  warehouse: '设备备货',
-  teardown: '撤场回收'
-};
 
-const workOrderPriorityLabelMap: Record<string, string> = {
-  high: '高',
-  medium: '中',
-  low: '低'
-};
-
-const workOrderStatusLabelMap: Record<string, string> = {
-  pending_assign: '待分配',
-  in_progress: '执行中',
-  pending_review: '待审核',
-  approved: '已通过',
-  rejected: '已驳回'
-};
-
-
-function mapWorkOrder(row: Record<string, unknown>): WorkOrderRecord {
+function mapWorkOrder(row: Record<string, unknown>, labels: { type: Record<string, string>; priority: Record<string, string>; status: Record<string, string> }): WorkOrderRecord {
   const type = String(row.type);
   const priority = String(row.priority);
   const status = String(row.status);
@@ -36,11 +16,11 @@ function mapWorkOrder(row: Record<string, unknown>): WorkOrderRecord {
     projectId: Number(row.project_id),
     title: String(row.title),
     type,
-    typeLabel: workOrderTypeLabelMap[type] || type,
+    typeLabel: labels.type[type] || type,
     priority,
-    priorityLabel: workOrderPriorityLabelMap[priority] || priority,
+    priorityLabel: labels.priority[priority] || priority,
     status,
-    statusLabel: workOrderStatusLabelMap[status] || status,
+    statusLabel: labels.status[status] || status,
     assigneeId: row.assignee_id ? Number(row.assignee_id) : null,
     reviewerId: row.reviewer_id ? Number(row.reviewer_id) : null,
     plannedStartAt: row.planned_start_at ? String(row.planned_start_at) : null,
@@ -51,7 +31,7 @@ function mapWorkOrder(row: Record<string, unknown>): WorkOrderRecord {
   };
 }
 
-function mapWorkOrderListItem(row: Record<string, unknown>): WorkOrderListItem {
+function mapWorkOrderListItem(row: Record<string, unknown>, labels: { type: Record<string, string>; priority: Record<string, string>; status: Record<string, string> }): WorkOrderListItem {
   const type = String(row.type);
   const priority = String(row.priority);
   const status = String(row.status);
@@ -62,18 +42,26 @@ function mapWorkOrderListItem(row: Record<string, unknown>): WorkOrderListItem {
     projectId: Number(row.project_id),
     title: String(row.title),
     type,
-    typeLabel: workOrderTypeLabelMap[type] || type,
+    typeLabel: labels.type[type] || type,
     priority,
-    priorityLabel: workOrderPriorityLabelMap[priority] || priority,
+    priorityLabel: labels.priority[priority] || priority,
     status,
-    statusLabel: workOrderStatusLabelMap[status] || status,
+    statusLabel: labels.status[status] || status,
     assigneeId: row.assignee_id ? Number(row.assignee_id) : null,
     reviewerId: row.reviewer_id ? Number(row.reviewer_id) : null
   };
 }
 
+async function getWorkOrderLabels() {
+  return {
+    type: await getDictionaryLabelMap('work_order_type'),
+    priority: await getDictionaryLabelMap('work_order_priority'),
+    status: await getDictionaryLabelMap('work_order_status')
+  };
+}
+
 export async function listWorkOrders(keyword?: string, status?: string): Promise<WorkOrderListItem[]> {
-  const result = await pool.query(
+  const [result, labels] = await Promise.all([pool.query(
     `SELECT id, work_order_no, project_id, title, type, priority, status, assignee_id, reviewer_id
      FROM work_orders
      WHERE is_deleted = FALSE
@@ -82,38 +70,38 @@ export async function listWorkOrders(keyword?: string, status?: string): Promise
      ORDER BY id DESC
      LIMIT 100`,
     [keyword || null, status || null]
-  );
+  ), getWorkOrderLabels()]);
 
-  return result.rows.map((row) => mapWorkOrderListItem(row as Record<string, unknown>));
+  return result.rows.map((row) => mapWorkOrderListItem(row as Record<string, unknown>, labels));
 }
 
 export async function listMyWorkOrders(userId: number): Promise<WorkOrderListItem[]> {
-  const result = await pool.query(
+  const [result, labels] = await Promise.all([pool.query(
     `SELECT id, work_order_no, project_id, title, type, priority, status, assignee_id, reviewer_id
      FROM work_orders
      WHERE is_deleted = FALSE AND (assignee_id = $1 OR reviewer_id = $1 OR assignee_id IS NULL)
      ORDER BY id DESC
      LIMIT 100`,
     [userId]
-  );
+  ), getWorkOrderLabels()]);
 
-  return result.rows.map((row) => mapWorkOrderListItem(row as Record<string, unknown>));
+  return result.rows.map((row) => mapWorkOrderListItem(row as Record<string, unknown>, labels));
 }
 
 export async function getWorkOrderById(id: number): Promise<WorkOrderRecord | null> {
-  const result = await pool.query(
+  const [result, labels] = await Promise.all([pool.query(
     `SELECT id, work_order_no, project_id, title, type, priority, status, assignee_id, reviewer_id,
             planned_start_at, planned_end_at, actual_start_at, actual_end_at, description
      FROM work_orders
      WHERE id = $1 AND is_deleted = FALSE`,
     [id]
-  );
+  ), getWorkOrderLabels()]);
 
   if (result.rowCount === 0) {
     return null;
   }
 
-  return mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  return mapWorkOrder(result.rows[0] as Record<string, unknown>, labels);
 }
 
 export async function createWorkOrder(input: CreateWorkOrderInput): Promise<WorkOrderRecord> {
@@ -149,7 +137,8 @@ export async function createWorkOrder(input: CreateWorkOrderInput): Promise<Work
     ]
   );
 
-  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  const labels = await getWorkOrderLabels();
+  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>, labels);
   await createAuditLog({ bizType: 'work_order', bizId: workOrder.id, action: 'create', remark: input.description ?? null });
   return workOrder;
 }
@@ -171,7 +160,8 @@ export async function assignWorkOrder(id: number, assigneeId: number | null, rev
     return null;
   }
 
-  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  const labels = await getWorkOrderLabels();
+  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>, labels);
   await createAuditLog({ bizType: 'work_order', bizId: id, action: 'assign', remark: `assignee=${assigneeId ?? 'null'}, reviewer=${reviewerId ?? 'keep'}` });
   return workOrder;
 }
@@ -216,7 +206,8 @@ export async function updateWorkOrderStatus(id: number, input: UpdateWorkOrderSt
     return null;
   }
 
-  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  const labels = await getWorkOrderLabels();
+  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>, labels);
   await createAuditLog({ bizType: 'work_order', bizId: id, action: `status:${input.status}`, operatorId: userId, remark: input.remark ?? null });
   return workOrder;
 }

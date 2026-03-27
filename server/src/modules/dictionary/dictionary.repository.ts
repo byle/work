@@ -109,3 +109,9 @@ export async function upsertDictionaryItem(input: {
 
   return mapItem(result.rows[0] as Record<string, unknown>);
 }
+
+
+export async function getDictionaryLabelMap(dictType: string) {
+  const items = await listDictionaryItems(dictType);
+  return Object.fromEntries(items.filter((item) => item.status === 'active').map((item) => [item.itemValue, item.itemLabel])) as Record<string, string>;
+}

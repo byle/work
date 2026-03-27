@@ -1,17 +1,6 @@
+import { getDictionaryLabelMap } from '../dictionary/dictionary.repository';
 import { pool } from '../../db/pool';
 import { CreateProjectInput, ProjectListItem, ProjectMember, ProjectRecord } from './project.types';
-
-const projectStatusLabelMap: Record<string, string> = {
-  draft: '草稿',
-  in_progress: '进行中',
-  completed: '已完成',
-  cancelled: '已取消'
-};
-
-const sourceTypeLabelMap: Record<string, string> = {
-  manual: '手动创建',
-  template: '模板生成'
-};
 
 type WorkOrderTemplateSeed = {
   id: number;
@@ -21,7 +10,7 @@ type WorkOrderTemplateSeed = {
   defaultPriority: string;
 };
 
-function mapProject(row: Record<string, unknown>): ProjectRecord {
+function mapProject(row: Record<string, unknown>, labels: { status: Record<string, string>; sourceType: Record<string, string> }): ProjectRecord {
   const status = String(row.status);
   const sourceType = String(row.source_type);
 
@@ -35,16 +24,26 @@ function mapProject(row: Record<string, unknown>): ProjectRecord {
     rehearsalAt: row.rehearsal_at ? String(row.rehearsal_at) : null,
     moveOutAt: row.move_out_at ? String(row.move_out_at) : null,
     status,
-    statusLabel: projectStatusLabelMap[status] || status,
+    statusLabel: labels.status[status] || status,
     templateId: row.template_id ? Number(row.template_id) : null,
     sourceType,
-    sourceTypeLabel: sourceTypeLabelMap[sourceType] || sourceType,
+    sourceTypeLabel: labels.sourceType[sourceType] || sourceType,
     managerId: row.manager_id ? Number(row.manager_id) : null
   };
 }
 
 function renderTemplate(template: string, values: Record<string, string>) {
   return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key: string) => values[key] ?? '');
+}
+
+async function getProjectLabels() {
+  return {
+    status: await getDictionaryLabelMap('project_status'),
+    sourceType: {
+      manual: '手动创建',
+      template: '模板生成'
+    }
+  };
 }
 
 async function listTemplateWorkOrders(templateId: number): Promise<WorkOrderTemplateSeed[]> {
@@ -132,48 +131,38 @@ async function createWorkOrdersFromTemplate(project: ProjectRecord) {
 }
 
 export async function listProjects(keyword?: string): Promise<ProjectListItem[]> {
-  const result = await pool.query(
-    `SELECT id, project_no, name, location, event_date, status, template_id, source_type, manager_id
-     FROM projects
-     WHERE is_deleted = FALSE
-       AND ($1::text IS NULL OR name ILIKE concat('%', $1::text, '%') OR project_no ILIKE concat('%', $1::text, '%') OR location ILIKE concat('%', $1::text, '%'))
-     ORDER BY event_date DESC, id DESC
-     LIMIT 100`,
-    [keyword || null]
-  );
+  const [result, labels] = await Promise.all([
+    pool.query(
+      `SELECT id, project_no, name, location, event_date, status, template_id, source_type, manager_id
+       FROM projects
+       WHERE is_deleted = FALSE
+         AND ($1::text IS NULL OR name ILIKE concat('%', $1::text, '%') OR project_no ILIKE concat('%', $1::text, '%') OR location ILIKE concat('%', $1::text, '%'))
+       ORDER BY event_date DESC, id DESC
+       LIMIT 100`,
+      [keyword || null]
+    ),
+    getProjectLabels()
+  ]);
 
-  return result.rows.map((row) => {
-    const status = String(row.status);
-    const sourceType = String(row.source_type);
-    return {
-      id: Number(row.id),
-      projectNo: String(row.project_no),
-      name: String(row.name),
-      location: String(row.location),
-      eventDate: String(row.event_date),
-      status,
-      statusLabel: projectStatusLabelMap[status] || status,
-      templateId: row.template_id ? Number(row.template_id) : null,
-      sourceType,
-      sourceTypeLabel: sourceTypeLabelMap[sourceType] || sourceType,
-      managerId: row.manager_id ? Number(row.manager_id) : null
-    };
-  });
+  return result.rows.map((row) => mapProject(row as Record<string, unknown>, labels));
 }
 
 export async function getProjectById(id: number): Promise<ProjectRecord | null> {
-  const result = await pool.query(
-    `SELECT id, project_no, name, location, event_date, move_in_at, rehearsal_at, move_out_at, status, template_id, source_type, manager_id
-     FROM projects
-     WHERE id = $1 AND is_deleted = FALSE`,
-    [id]
-  );
+  const [result, labels] = await Promise.all([
+    pool.query(
+      `SELECT id, project_no, name, location, event_date, move_in_at, rehearsal_at, move_out_at, status, template_id, source_type, manager_id
+       FROM projects
+       WHERE id = $1 AND is_deleted = FALSE`,
+      [id]
+    ),
+    getProjectLabels()
+  ]);
 
   if (result.rowCount === 0) {
     return null;
   }
 
-  const project = mapProject(result.rows[0] as Record<string, unknown>);
+  const project = mapProject(result.rows[0] as Record<string, unknown>, labels);
   project.members = await listProjectMembers(id);
   return project;
 }
@@ -215,7 +204,8 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectR
     ]
   );
 
-  const project = mapProject(result.rows[0] as Record<string, unknown>);
+  const labels = await getProjectLabels();
+  const project = mapProject(result.rows[0] as Record<string, unknown>, labels);
 
   if (input.members?.length) {
     await createProjectMembers(project.id, input.members);
