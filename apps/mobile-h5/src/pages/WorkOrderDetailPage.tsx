@@ -2,6 +2,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { BackButton } from '../components/BackButton';
 import { InfoCard } from '../components/InfoCard';
 import { StatusBanner } from '../components/StatusBanner';
+import { getWorkOrderPriorityLabel, getWorkOrderStatusLabel, getWorkOrderTypeLabel } from '../lib/dicts';
 import { deleteAttachment, fetchAttachments, fetchWorkOrderDetail, updateWorkOrderStatus, uploadAttachment } from '../lib/api';
 import { Attachment, WorkOrder } from '../types/api';
 
@@ -54,24 +55,13 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
+    if (!file) return;
     const buffer = await file.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     let binary = '';
-    bytes.forEach((byte) => {
-      binary += String.fromCharCode(byte);
-    });
-
+    bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
     const contentBase64 = btoa(binary);
-    await uploadAttachment(workOrderId, {
-      fileName: file.name,
-      fileType: file.type,
-      contentBase64
-    });
+    await uploadAttachment(workOrderId, { fileName: file.name, fileType: file.type, contentBase64 });
     await load();
   };
 
@@ -88,9 +78,9 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
         <InfoCard title={workOrder.title} description={`工单编号：${workOrder.workOrderNo}`}>
           <div style={{ display: 'grid', gap: 8, fontSize: 14 }}>
             <div>项目 ID：{workOrder.projectId}</div>
-            <div>工单类型：{workOrder.type}</div>
-            <div>优先级：{workOrder.priority}</div>
-            <div>状态：{workOrder.status}</div>
+            <div>工单类型：{getWorkOrderTypeLabel(workOrder.type)}</div>
+            <div>优先级：{getWorkOrderPriorityLabel(workOrder.priority)}</div>
+            <div>状态：{getWorkOrderStatusLabel(workOrder.status)}</div>
             <div>执行人：{workOrder.assigneeId ?? '未分配'}</div>
             <div>审核人：{workOrder.reviewerId ?? '未设置'}</div>
             <div>说明：{workOrder.description || '暂无说明'}</div>
@@ -111,9 +101,7 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
           <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
             {attachments.map((item) => (
               <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <a href={`http://127.0.0.1:3000${item.fileUrl}`} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>
-                  {item.fileName}
-                </a>
+                <a href={`http://127.0.0.1:3000${item.fileUrl}`} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>{item.fileName}</a>
                 <button onClick={() => handleDeleteAttachment(item.id)} style={{ border: 'none', background: '#fee2e2', color: '#b91c1c', padding: '6px 10px', borderRadius: 8 }}>删除</button>
               </div>
             ))}

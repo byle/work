@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { InfoCard } from '../components/InfoCard';
 import { StatusBanner } from '../components/StatusBanner';
+import { getWorkOrderPriorityLabel, getWorkOrderStatusLabel, getWorkOrderTypeLabel } from '../lib/dicts';
 import { fetchMyWorkOrders } from '../lib/api';
 import { WorkOrder } from '../types/api';
 
@@ -35,9 +36,9 @@ export function WorkOrdersPage({ onOpenDetail }: WorkOrdersPageProps) {
         <InfoCard key={workOrder.id} title={workOrder.title} description={`工单编号：${workOrder.workOrderNo}`}>
           <div style={{ display: 'grid', gap: 6, fontSize: 14 }}>
             <div>项目 ID：{workOrder.projectId}</div>
-            <div>类型：{workOrder.type}</div>
-            <div>优先级：{workOrder.priority}</div>
-            <div>状态：{workOrder.status}</div>
+            <div>类型：{getWorkOrderTypeLabel(workOrder.type)}</div>
+            <div>优先级：{getWorkOrderPriorityLabel(workOrder.priority)}</div>
+            <div>状态：{getWorkOrderStatusLabel(workOrder.status)}</div>
           </div>
           <button onClick={() => onOpenDetail(workOrder.id)} style={{ marginTop: 12, border: 'none', background: '#2563eb', color: '#fff', padding: '10px 12px', borderRadius: 10, width: '100%' }}>
             查看详情
