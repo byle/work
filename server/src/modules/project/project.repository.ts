@@ -13,6 +13,7 @@ type WorkOrderTemplateSeed = {
 function mapProject(row: Record<string, unknown>, labels: { status: Record<string, string>; sourceType: Record<string, string> }): ProjectRecord {
   const status = String(row.status);
   const sourceType = String(row.source_type);
+  const eventAt = row.rehearsal_at ? String(row.rehearsal_at) : null;
 
   return {
     id: Number(row.id),
@@ -20,6 +21,7 @@ function mapProject(row: Record<string, unknown>, labels: { status: Record<strin
     name: String(row.name),
     location: String(row.location),
     eventDate: String(row.event_date),
+    eventAt,
     moveInAt: row.move_in_at ? String(row.move_in_at) : null,
     rehearsalAt: row.rehearsal_at ? String(row.rehearsal_at) : null,
     moveOutAt: row.move_out_at ? String(row.move_out_at) : null,
@@ -119,7 +121,7 @@ async function createWorkOrdersFromTemplate(project: ProjectRecord) {
           projectName: project.name,
           projectNo: project.projectNo,
           location: project.location,
-          eventDate: project.eventDate
+          eventDate: project.eventAt || project.eventDate
         }),
         item.type,
         item.defaultPriority,
@@ -133,7 +135,7 @@ async function createWorkOrdersFromTemplate(project: ProjectRecord) {
 export async function listProjects(keyword?: string): Promise<ProjectListItem[]> {
   const [result, labels] = await Promise.all([
     pool.query(
-      `SELECT id, project_no, name, location, event_date, status, template_id, source_type, manager_id
+      `SELECT id, project_no, name, location, event_date, rehearsal_at, status, template_id, source_type, manager_id
        FROM projects
        WHERE is_deleted = FALSE
          AND ($1::text IS NULL OR name ILIKE concat('%', $1::text, '%') OR project_no ILIKE concat('%', $1::text, '%') OR location ILIKE concat('%', $1::text, '%'))
@@ -168,6 +170,13 @@ export async function getProjectById(id: number): Promise<ProjectRecord | null> 
 }
 
 export async function createProject(input: CreateProjectInput): Promise<ProjectRecord> {
+  const eventAt = input.eventAt ?? null;
+  const eventDate = input.eventDate ?? (eventAt ? eventAt.slice(0, 10) : null);
+
+  if (!eventDate) {
+    throw new Error('eventDate or eventAt is required');
+  }
+
   const result = await pool.query(
     `INSERT INTO projects (
       project_no,
@@ -192,9 +201,9 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectR
       input.name,
       input.customerName ?? null,
       input.location,
-      input.eventDate,
+      eventDate,
       input.moveInAt ?? null,
-      input.rehearsalAt ?? null,
+      eventAt ?? input.rehearsalAt ?? null,
       input.moveOutAt ?? null,
       input.managerId ?? null,
       input.status ?? 'draft',

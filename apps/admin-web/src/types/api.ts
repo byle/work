@@ -75,6 +75,7 @@ export type Project = {
   name: string;
   location: string;
   eventDate: string;
+  eventAt?: string | null;
   status: string;
   statusLabel?: string;
   templateId: number | null;
