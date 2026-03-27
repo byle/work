@@ -31,6 +31,12 @@ export type LoginResult = {
   user: AuthUser;
 };
 
+export type ProjectMember = {
+  id: number;
+  userId: number;
+  roleInProject: string;
+};
+
 export type ProjectTemplate = {
   id: number;
   name: string;
@@ -62,6 +68,8 @@ export type Project = {
   status: string;
   templateId: number | null;
   sourceType: string;
+  managerId: number | null;
+  members?: ProjectMember[];
 };
 
 export type WorkOrder = {
@@ -73,6 +81,7 @@ export type WorkOrder = {
   priority: string;
   status: string;
   assigneeId: number | null;
+  reviewerId: number | null;
   plannedStartAt?: string | null;
   plannedEndAt?: string | null;
   actualStartAt?: string | null;

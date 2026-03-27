@@ -1,5 +1,5 @@
 import { pool } from '../../db/pool';
-import { CreateProjectInput, ProjectListItem, ProjectRecord } from './project.types';
+import { CreateProjectInput, ProjectListItem, ProjectMember, ProjectRecord } from './project.types';
 
 type WorkOrderTemplateSeed = {
   id: number;
@@ -21,7 +21,8 @@ function mapProject(row: Record<string, unknown>): ProjectRecord {
     moveOutAt: row.move_out_at ? String(row.move_out_at) : null,
     status: String(row.status),
     templateId: row.template_id ? Number(row.template_id) : null,
-    sourceType: String(row.source_type)
+    sourceType: String(row.source_type),
+    managerId: row.manager_id ? Number(row.manager_id) : null
   };
 }
 
@@ -44,6 +45,33 @@ async function listTemplateWorkOrders(templateId: number): Promise<WorkOrderTemp
     titleTemplate: String(row.title_template),
     descriptionTemplate: row.description_template ? String(row.description_template) : null,
     defaultPriority: String(row.default_priority)
+  }));
+}
+
+async function createProjectMembers(projectId: number, members: Array<{ userId: number; roleInProject: string }>) {
+  for (const member of members) {
+    await pool.query(
+      `INSERT INTO project_members (project_id, user_id, role_in_project)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (project_id, user_id, role_in_project) DO NOTHING`,
+      [projectId, member.userId, member.roleInProject]
+    );
+  }
+}
+
+async function listProjectMembers(projectId: number): Promise<ProjectMember[]> {
+  const result = await pool.query(
+    `SELECT id, user_id, role_in_project
+     FROM project_members
+     WHERE project_id = $1
+     ORDER BY id ASC`,
+    [projectId]
+  );
+
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    userId: Number(row.user_id),
+    roleInProject: String(row.role_in_project)
   }));
 }
 
@@ -88,7 +116,7 @@ async function createWorkOrdersFromTemplate(project: ProjectRecord) {
 
 export async function listProjects(): Promise<ProjectListItem[]> {
   const result = await pool.query(
-    `SELECT id, project_no, name, location, event_date, status, template_id, source_type
+    `SELECT id, project_no, name, location, event_date, status, template_id, source_type, manager_id
      FROM projects
      WHERE is_deleted = FALSE
      ORDER BY event_date DESC, id DESC
@@ -103,13 +131,14 @@ export async function listProjects(): Promise<ProjectListItem[]> {
     eventDate: String(row.event_date),
     status: String(row.status),
     templateId: row.template_id ? Number(row.template_id) : null,
-    sourceType: String(row.source_type)
+    sourceType: String(row.source_type),
+    managerId: row.manager_id ? Number(row.manager_id) : null
   }));
 }
 
 export async function getProjectById(id: number): Promise<ProjectRecord | null> {
   const result = await pool.query(
-    `SELECT id, project_no, name, location, event_date, move_in_at, rehearsal_at, move_out_at, status, template_id, source_type
+    `SELECT id, project_no, name, location, event_date, move_in_at, rehearsal_at, move_out_at, status, template_id, source_type, manager_id
      FROM projects
      WHERE id = $1 AND is_deleted = FALSE`,
     [id]
@@ -119,7 +148,9 @@ export async function getProjectById(id: number): Promise<ProjectRecord | null> 
     return null;
   }
 
-  return mapProject(result.rows[0] as Record<string, unknown>);
+  const project = mapProject(result.rows[0] as Record<string, unknown>);
+  project.members = await listProjectMembers(id);
+  return project;
 }
 
 export async function createProject(input: CreateProjectInput): Promise<ProjectRecord> {
@@ -142,7 +173,7 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectR
       concat('PRJ-', to_char(CURRENT_DATE, 'YYYYMMDD'), '-', lpad(nextval('projects_id_seq')::text, 4, '0')),
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
     )
-    RETURNING id, project_no, name, location, event_date, move_in_at, rehearsal_at, move_out_at, status, template_id, source_type`,
+    RETURNING id, project_no, name, location, event_date, move_in_at, rehearsal_at, move_out_at, status, template_id, source_type, manager_id`,
     [
       input.name,
       input.customerName ?? null,
@@ -161,9 +192,14 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectR
 
   const project = mapProject(result.rows[0] as Record<string, unknown>);
 
+  if (input.members?.length) {
+    await createProjectMembers(project.id, input.members);
+  }
+
   if (project.templateId) {
     await createWorkOrdersFromTemplate(project);
   }
 
+  project.members = await listProjectMembers(project.id);
   return project;
 }

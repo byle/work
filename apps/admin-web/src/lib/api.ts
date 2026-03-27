@@ -137,10 +137,10 @@ export function createWorkOrder(payload: Record<string, unknown>) {
   });
 }
 
-export function assignWorkOrder(workOrderId: number, assigneeId: number | null) {
+export function assignWorkOrder(workOrderId: number, assigneeId: number | null, reviewerId?: number | null) {
   return request<WorkOrder>(`/api/work-orders/${workOrderId}/assign`, {
     method: 'PATCH',
-    body: JSON.stringify({ assigneeId })
+    body: JSON.stringify({ assigneeId, reviewerId: reviewerId ?? null })
   });
 }
 

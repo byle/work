@@ -46,7 +46,7 @@ workOrderRouter.patch(
   '/:id/assign',
   requireRole(['admin', 'dispatcher']),
   asyncHandler(async (req, res) => {
-    const workOrder = await assignWorkOrder(Number(req.params.id), req.body.assigneeId ?? null);
+    const workOrder = await assignWorkOrder(Number(req.params.id), req.body.assigneeId ?? null, req.body.reviewerId ?? null);
 
     return success(res, workOrder, 'work order assigned');
   })

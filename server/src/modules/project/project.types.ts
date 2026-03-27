@@ -1,3 +1,9 @@
+export type ProjectMember = {
+  id: number;
+  userId: number;
+  roleInProject: string;
+};
+
 export type ProjectRecord = {
   id: number;
   projectNo: string;
@@ -10,6 +16,8 @@ export type ProjectRecord = {
   status: string;
   templateId: number | null;
   sourceType: string;
+  managerId: number | null;
+  members?: ProjectMember[];
 };
 
 export type ProjectListItem = {
@@ -21,6 +29,7 @@ export type ProjectListItem = {
   status: string;
   templateId: number | null;
   sourceType: string;
+  managerId: number | null;
 };
 
 export type CreateProjectInput = {
@@ -36,4 +45,5 @@ export type CreateProjectInput = {
   status?: string;
   templateId?: number;
   sourceType?: string;
+  members?: Array<{ userId: number; roleInProject: string }>;
 };

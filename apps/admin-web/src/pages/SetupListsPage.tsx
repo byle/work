@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { DataTable } from '../components/DataTable';
 import { FormCard } from '../components/FormCard';
 import { FormField } from '../components/FormField';
@@ -230,6 +230,27 @@ export function SetupListsPage() {
     await loadItems(itemForm.setupListId);
   };
 
+  const handleFileImport = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const text = await file.text();
+    setImportText(text);
+    const rows = parseCsvRows(text);
+
+    if (!itemForm.setupListId) {
+      setImportResult('请先选择清单');
+      return;
+    }
+
+    const result = await importSetupListItems(Number(itemForm.setupListId), rows);
+    setImportResult(`文件导入完成：成功 ${result.successCount} / 失败 ${result.failCount}`);
+    await loadItems(itemForm.setupListId);
+  };
+
   const handleExport = async () => {
     if (!itemForm.setupListId) {
       setImportResult('请先选择清单');
@@ -241,7 +262,7 @@ export function SetupListsPage() {
   };
 
   return (
-    <PageSection title="清单列表" description="维护搭建清单与明细，支持批量导入导出。">
+    <PageSection title="清单列表" description="维护搭建清单与明细，支持文本或文件批量导入导出。">
       <FormCard title="新建搭建清单" description="从项目生成清单快照，供现场执行。" onSubmit={handleSubmit} submitting={submitting}>
         <FormSelect label="所属项目" options={projectOptions} value={form.projectId} onChange={(e) => handleProjectChange(e.target.value)} required />
         <FormField label="清单标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
@@ -251,17 +272,7 @@ export function SetupListsPage() {
       </FormCard>
 
       <FormCard title={itemForm.id ? '编辑清单明细' : '新增清单明细'} description="为指定清单录入搭建项、规格、数量和备注。" onSubmit={handleItemSubmit} submitting={itemSubmitting}>
-        <FormSelect
-          label="所属清单"
-          options={setupListOptions}
-          value={itemForm.setupListId}
-          onChange={async (e) => {
-            const setupListId = e.target.value;
-            setItemForm({ ...itemForm, id: '', setupListId });
-            await loadItems(setupListId);
-          }}
-          required
-        />
+        <FormSelect label="所属清单" options={setupListOptions} value={itemForm.setupListId} onChange={async (e) => { const setupListId = e.target.value; setItemForm({ ...itemForm, id: '', setupListId }); await loadItems(setupListId); }} required />
         <FormField label="序号" value={itemForm.sequenceNo} onChange={(e) => setItemForm({ ...itemForm, sequenceNo: e.target.value })} />
         <FormField label="分类" value={itemForm.categoryName} onChange={(e) => setItemForm({ ...itemForm, categoryName: e.target.value })} />
         <FormField label="内容" value={itemForm.itemName} onChange={(e) => setItemForm({ ...itemForm, itemName: e.target.value })} required />
@@ -274,10 +285,14 @@ export function SetupListsPage() {
 
       <div style={{ background: '#fff', borderRadius: 12, padding: 20, border: '1px solid #e5e7eb', marginBottom: 20 }}>
         <h3 style={{ marginTop: 0 }}>清单导入导出</h3>
-        <p style={{ color: '#6b7280' }}>按 CSV 表头粘贴数据后导入；导出会返回当前清单的 CSV 文本。</p>
+        <p style={{ color: '#6b7280' }}>支持粘贴 CSV 文本，或直接选择 `.csv` 文件导入。</p>
         <textarea value={importText} onChange={(e) => setImportText(e.target.value)} style={{ width: '100%', minHeight: 140, borderRadius: 10, border: '1px solid #d1d5db', padding: 12 }} />
-        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+        <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'center' }}>
           <button onClick={handleImport} style={{ border: 'none', background: '#2563eb', color: '#fff', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>导入明细</button>
+          <label style={{ background: '#f3f4f6', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
+            选择 CSV 文件
+            <input type="file" accept=".csv,text/csv" onChange={handleFileImport} style={{ display: 'none' }} />
+          </label>
           <button onClick={handleExport} style={{ border: 'none', background: '#0f766e', color: '#fff', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>导出 CSV</button>
         </div>
         {importResult ? <pre style={{ whiteSpace: 'pre-wrap', background: '#f8fafc', padding: 12, borderRadius: 10, marginTop: 12 }}>{importResult}</pre> : null}
@@ -286,45 +301,9 @@ export function SetupListsPage() {
       <LoadState loading={loading} error={error} />
       {!loading && !error ? (
         <>
-          <DataTable
-            data={setupLists}
-            emptyText="当前还没有搭建清单数据。"
-            columns={[
-              { key: 'title', title: '清单标题' },
-              { key: 'projectId', title: '项目 ID' },
-              { key: 'projectNameSnapshot', title: '项目快照' },
-              { key: 'locationSnapshot', title: '地点快照' },
-              { key: 'eventDateSnapshot', title: '活动时间' },
-              { key: 'status', title: '状态' }
-            ]}
-          />
-
+          <DataTable data={setupLists} emptyText="当前还没有搭建清单数据。" columns={[{ key: 'title', title: '清单标题' }, { key: 'projectId', title: '项目 ID' }, { key: 'projectNameSnapshot', title: '项目快照' }, { key: 'locationSnapshot', title: '地点快照' }, { key: 'eventDateSnapshot', title: '活动时间' }, { key: 'status', title: '状态' }]} />
           <div style={{ height: 20 }} />
-
-          <DataTable
-            data={setupListItems}
-            emptyText="当前所选清单还没有明细数据。"
-            columns={[
-              { key: 'sequenceNo', title: '序号' },
-              { key: 'categoryName', title: '分类' },
-              { key: 'itemName', title: '内容' },
-              { key: 'specification', title: '规格' },
-              { key: 'quantity', title: '数量' },
-              { key: 'unit', title: '单位' },
-              { key: 'remark', title: '备注' },
-              { key: 'executeStatus', title: '执行状态' },
-              {
-                key: 'action',
-                title: '操作',
-                render: (item) => (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => handleEditItem(item)} style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>编辑</button>
-                    <button onClick={() => handleDeleteItem(item)} style={{ border: 'none', background: '#fee2e2', color: '#b91c1c', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>删除</button>
-                  </div>
-                )
-              }
-            ]}
-          />
+          <DataTable data={setupListItems} emptyText="当前所选清单还没有明细数据。" columns={[{ key: 'sequenceNo', title: '序号' }, { key: 'categoryName', title: '分类' }, { key: 'itemName', title: '内容' }, { key: 'specification', title: '规格' }, { key: 'quantity', title: '数量' }, { key: 'unit', title: '单位' }, { key: 'remark', title: '备注' }, { key: 'executeStatus', title: '执行状态' }, { key: 'action', title: '操作', render: (item) => (<div style={{ display: 'flex', gap: 8 }}><button onClick={() => handleEditItem(item)} style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>编辑</button><button onClick={() => handleDeleteItem(item)} style={{ border: 'none', background: '#fee2e2', color: '#b91c1c', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>删除</button></div>) }]} />
         </>
       ) : null}
     </PageSection>

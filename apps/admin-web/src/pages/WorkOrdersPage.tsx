@@ -12,7 +12,8 @@ const initialForm = {
   projectId: '',
   title: '',
   type: 'setup',
-  priority: 'medium'
+  priority: 'medium',
+  reviewerId: ''
 };
 
 export function WorkOrdersPage() {
@@ -24,6 +25,7 @@ export function WorkOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState(initialForm);
   const [assigningId, setAssigningId] = useState<number | null>(null);
+  const [reviewerDraft, setReviewerDraft] = useState<Record<number, string>>({});
 
   const loadData = () => {
     setLoading(true);
@@ -36,6 +38,7 @@ export function WorkOrdersPage() {
           ...current,
           projectId: current.projectId || String(projectData.list[0]?.id || '')
         }));
+        setReviewerDraft(Object.fromEntries(workOrderData.list.map((item) => [item.id, item.reviewerId ? String(item.reviewerId) : ''])));
         setError(null);
       })
       .catch((err: Error) => {
@@ -66,6 +69,7 @@ export function WorkOrdersPage() {
     [users]
   );
 
+  const reviewerOptions = assigneeOptions;
   const userMap = useMemo(() => Object.fromEntries(users.map((user) => [user.id, user.realName])), [users]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -77,7 +81,8 @@ export function WorkOrdersPage() {
         projectId: Number(form.projectId),
         title: form.title,
         type: form.type,
-        priority: form.priority
+        priority: form.priority,
+        reviewerId: form.reviewerId ? Number(form.reviewerId) : undefined
       });
       setForm({ ...initialForm, projectId: form.projectId });
       loadData();
@@ -92,7 +97,7 @@ export function WorkOrdersPage() {
     setAssigningId(workOrderId);
 
     try {
-      await assignWorkOrder(workOrderId, assigneeId ? Number(assigneeId) : null);
+      await assignWorkOrder(workOrderId, assigneeId ? Number(assigneeId) : null, reviewerDraft[workOrderId] ? Number(reviewerDraft[workOrderId]) : null);
       loadData();
     } catch (err) {
       setError((err as Error).message);
@@ -102,12 +107,13 @@ export function WorkOrdersPage() {
   };
 
   return (
-    <PageSection title="工单列表" description="查看工单类型、优先级、状态和关联项目，并进行指派。">
-      <FormCard title="新建工单" description="先录入工单主信息，后续可继续补充指派和时间。" onSubmit={handleSubmit} submitting={submitting}>
+    <PageSection title="工单列表" description="查看工单类型、优先级、状态和关联项目，并进行执行人/审核人配置。">
+      <FormCard title="新建工单" description="可同时设置审核人，后续再指派执行人。" onSubmit={handleSubmit} submitting={submitting}>
         <FormSelect label="所属项目" options={projectOptions} value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} required />
         <FormField label="工单标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
         <FormField label="工单类型" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} required />
         <FormField label="优先级" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} required />
+        <FormSelect label="审核人" options={reviewerOptions} value={form.reviewerId} onChange={(e) => setForm({ ...form, reviewerId: e.target.value })} />
       </FormCard>
       <LoadState loading={loading} error={error} />
       {!loading && !error ? (
@@ -122,6 +128,23 @@ export function WorkOrdersPage() {
             { key: 'priority', title: '优先级' },
             { key: 'status', title: '状态' },
             { key: 'assigneeId', title: '执行人', render: (item) => (item.assigneeId ? userMap[item.assigneeId] || item.assigneeId : '未分配') },
+            {
+              key: 'reviewerId',
+              title: '审核人',
+              render: (item) => (
+                <select
+                  value={reviewerDraft[item.id] ?? ''}
+                  onChange={(e) => setReviewerDraft((current) => ({ ...current, [item.id]: e.target.value }))}
+                  style={{ padding: 8, borderRadius: 8, border: '1px solid #d1d5db' }}
+                >
+                  {reviewerOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              )
+            },
             {
               key: 'assign',
               title: '指派',

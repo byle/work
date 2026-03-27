@@ -7,6 +7,7 @@ export type WorkOrderRecord = {
   priority: string;
   status: string;
   assigneeId: number | null;
+  reviewerId: number | null;
   plannedStartAt: string | null;
   plannedEndAt: string | null;
   actualStartAt: string | null;
@@ -23,6 +24,7 @@ export type WorkOrderListItem = {
   priority: string;
   status: string;
   assigneeId: number | null;
+  reviewerId: number | null;
 };
 
 export type CreateWorkOrderInput = {
@@ -31,6 +33,7 @@ export type CreateWorkOrderInput = {
   type: string;
   priority?: string;
   assigneeId?: number;
+  reviewerId?: number;
   plannedStartAt?: string;
   plannedEndAt?: string;
   description?: string;
