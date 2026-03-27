@@ -30,3 +30,35 @@ export function getWorkOrderPriorityLabel(value: string) {
 export function getWorkOrderStatusLabel(value: string) {
   return workOrderStatusOptions.find((item) => item.value === value)?.label || value;
 }
+
+
+export const projectStatusOptions = [
+  { label: '草稿', value: 'draft' },
+  { label: '进行中', value: 'in_progress' },
+  { label: '已完成', value: 'completed' },
+  { label: '已取消', value: 'cancelled' }
+];
+
+export const setupListStatusOptions = [
+  { label: '草稿', value: 'draft' },
+  { label: '进行中', value: 'in_progress' },
+  { label: '已完成', value: 'completed' }
+];
+
+export const setupItemStatusOptions = [
+  { label: '待执行', value: 'pending' },
+  { label: '执行中', value: 'in_progress' },
+  { label: '已完成', value: 'done' }
+];
+
+export function getProjectStatusLabel(value: string) {
+  return projectStatusOptions.find((item) => item.value === value)?.label || value;
+}
+
+export function getSetupListStatusLabel(value: string) {
+  return setupListStatusOptions.find((item) => item.value === value)?.label || value;
+}
+
+export function getSetupItemStatusLabel(value: string) {
+  return setupItemStatusOptions.find((item) => item.value === value)?.label || value;
+}
