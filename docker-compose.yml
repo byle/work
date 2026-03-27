@@ -1,15 +1,13 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: stage-workflow-postgres
     environment:
-      POSTGRES_DB: stage_workflow
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-stage_workflow}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - '5432:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -21,37 +19,39 @@ services:
     container_name: stage-workflow-server
     environment:
       NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/stage_workflow
-      CORS_ORIGINS: http://localhost:8080,http://localhost:8081
+      PORT: ${SERVER_PORT:-3000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-stage_workflow}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:8081}
     depends_on:
       - postgres
     ports:
-      - '3000:3000'
+      - '${SERVER_PORT:-3000}:3000'
+    volumes:
+      - ./uploads:/app/server/uploads
 
   admin-web:
     build:
       context: .
       dockerfile: apps/admin-web/Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:3000
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     container_name: stage-workflow-admin-web
     depends_on:
       - server
     ports:
-      - '8080:80'
+      - '${ADMIN_WEB_PORT:-8080}:80'
 
   mobile-h5:
     build:
       context: .
       dockerfile: apps/mobile-h5/Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:3000
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
     container_name: stage-workflow-mobile-h5
     depends_on:
       - server
     ports:
-      - '8081:80'
+      - '${MOBILE_H5_PORT:-8081}:80'
 
 volumes:
   postgres_data:
