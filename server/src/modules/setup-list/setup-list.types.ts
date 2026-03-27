@@ -10,6 +10,7 @@ export type SetupListRecord = {
   moveOutAtSnapshot: string | null;
   remark: string | null;
   status: string;
+  statusLabel: string;
 };
 
 export type SetupListItemRecord = {
@@ -24,6 +25,7 @@ export type SetupListItemRecord = {
   unit: string;
   remark: string | null;
   executeStatus: string;
+  executeStatusLabel: string;
   assigneeId: number | null;
   completedAt: string | null;
   sortOrder: number;

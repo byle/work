@@ -4,8 +4,11 @@ export type WorkOrderRecord = {
   projectId: number;
   title: string;
   type: string;
+  typeLabel: string;
   priority: string;
+  priorityLabel: string;
   status: string;
+  statusLabel: string;
   assigneeId: number | null;
   reviewerId: number | null;
   plannedStartAt: string | null;
@@ -21,8 +24,11 @@ export type WorkOrderListItem = {
   projectId: number;
   title: string;
   type: string;
+  typeLabel: string;
   priority: string;
+  priorityLabel: string;
   status: string;
+  statusLabel: string;
   assigneeId: number | null;
   reviewerId: number | null;
 };

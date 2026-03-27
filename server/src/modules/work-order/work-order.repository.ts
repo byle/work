@@ -2,15 +2,45 @@ import { createAuditLog } from '../audit/audit.repository';
 import { pool } from '../../db/pool';
 import { CreateWorkOrderInput, UpdateWorkOrderStatusInput, WorkOrderListItem, WorkOrderRecord } from './work-order.types';
 
+
+const workOrderTypeLabelMap: Record<string, string> = {
+  setup: '现场搭建',
+  survey: '现场勘察',
+  warehouse: '设备备货',
+  teardown: '撤场回收'
+};
+
+const workOrderPriorityLabelMap: Record<string, string> = {
+  high: '高',
+  medium: '中',
+  low: '低'
+};
+
+const workOrderStatusLabelMap: Record<string, string> = {
+  pending_assign: '待分配',
+  in_progress: '执行中',
+  pending_review: '待审核',
+  approved: '已通过',
+  rejected: '已驳回'
+};
+
+
 function mapWorkOrder(row: Record<string, unknown>): WorkOrderRecord {
+  const type = String(row.type);
+  const priority = String(row.priority);
+  const status = String(row.status);
+
   return {
     id: Number(row.id),
     workOrderNo: String(row.work_order_no),
     projectId: Number(row.project_id),
     title: String(row.title),
-    type: String(row.type),
-    priority: String(row.priority),
-    status: String(row.status),
+    type,
+    typeLabel: workOrderTypeLabelMap[type] || type,
+    priority,
+    priorityLabel: workOrderPriorityLabelMap[priority] || priority,
+    status,
+    statusLabel: workOrderStatusLabelMap[status] || status,
     assigneeId: row.assignee_id ? Number(row.assignee_id) : null,
     reviewerId: row.reviewer_id ? Number(row.reviewer_id) : null,
     plannedStartAt: row.planned_start_at ? String(row.planned_start_at) : null,
@@ -22,14 +52,21 @@ function mapWorkOrder(row: Record<string, unknown>): WorkOrderRecord {
 }
 
 function mapWorkOrderListItem(row: Record<string, unknown>): WorkOrderListItem {
+  const type = String(row.type);
+  const priority = String(row.priority);
+  const status = String(row.status);
+
   return {
     id: Number(row.id),
     workOrderNo: String(row.work_order_no),
     projectId: Number(row.project_id),
     title: String(row.title),
-    type: String(row.type),
-    priority: String(row.priority),
-    status: String(row.status),
+    type,
+    typeLabel: workOrderTypeLabelMap[type] || type,
+    priority,
+    priorityLabel: workOrderPriorityLabelMap[priority] || priority,
+    status,
+    statusLabel: workOrderStatusLabelMap[status] || status,
     assigneeId: row.assignee_id ? Number(row.assignee_id) : null,
     reviewerId: row.reviewer_id ? Number(row.reviewer_id) : null
   };

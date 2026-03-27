@@ -1,6 +1,18 @@
 import { pool } from '../../db/pool';
 import { CreateProjectInput, ProjectListItem, ProjectMember, ProjectRecord } from './project.types';
 
+const projectStatusLabelMap: Record<string, string> = {
+  draft: '草稿',
+  in_progress: '进行中',
+  completed: '已完成',
+  cancelled: '已取消'
+};
+
+const sourceTypeLabelMap: Record<string, string> = {
+  manual: '手动创建',
+  template: '模板生成'
+};
+
 type WorkOrderTemplateSeed = {
   id: number;
   type: string;
@@ -10,6 +22,9 @@ type WorkOrderTemplateSeed = {
 };
 
 function mapProject(row: Record<string, unknown>): ProjectRecord {
+  const status = String(row.status);
+  const sourceType = String(row.source_type);
+
   return {
     id: Number(row.id),
     projectNo: String(row.project_no),
@@ -19,9 +34,11 @@ function mapProject(row: Record<string, unknown>): ProjectRecord {
     moveInAt: row.move_in_at ? String(row.move_in_at) : null,
     rehearsalAt: row.rehearsal_at ? String(row.rehearsal_at) : null,
     moveOutAt: row.move_out_at ? String(row.move_out_at) : null,
-    status: String(row.status),
+    status,
+    statusLabel: projectStatusLabelMap[status] || status,
     templateId: row.template_id ? Number(row.template_id) : null,
-    sourceType: String(row.source_type),
+    sourceType,
+    sourceTypeLabel: sourceTypeLabelMap[sourceType] || sourceType,
     managerId: row.manager_id ? Number(row.manager_id) : null
   };
 }
@@ -125,17 +142,23 @@ export async function listProjects(keyword?: string): Promise<ProjectListItem[]>
     [keyword || null]
   );
 
-  return result.rows.map((row) => ({
-    id: Number(row.id),
-    projectNo: String(row.project_no),
-    name: String(row.name),
-    location: String(row.location),
-    eventDate: String(row.event_date),
-    status: String(row.status),
-    templateId: row.template_id ? Number(row.template_id) : null,
-    sourceType: String(row.source_type),
-    managerId: row.manager_id ? Number(row.manager_id) : null
-  }));
+  return result.rows.map((row) => {
+    const status = String(row.status);
+    const sourceType = String(row.source_type);
+    return {
+      id: Number(row.id),
+      projectNo: String(row.project_no),
+      name: String(row.name),
+      location: String(row.location),
+      eventDate: String(row.event_date),
+      status,
+      statusLabel: projectStatusLabelMap[status] || status,
+      templateId: row.template_id ? Number(row.template_id) : null,
+      sourceType,
+      sourceTypeLabel: sourceTypeLabelMap[sourceType] || sourceType,
+      managerId: row.manager_id ? Number(row.manager_id) : null
+    };
+  });
 }
 
 export async function getProjectById(id: number): Promise<ProjectRecord | null> {

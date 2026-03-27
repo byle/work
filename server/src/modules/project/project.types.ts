@@ -14,8 +14,10 @@ export type ProjectRecord = {
   rehearsalAt: string | null;
   moveOutAt: string | null;
   status: string;
+  statusLabel: string;
   templateId: number | null;
   sourceType: string;
+  sourceTypeLabel: string;
   managerId: number | null;
   members?: ProjectMember[];
 };
@@ -27,8 +29,10 @@ export type ProjectListItem = {
   location: string;
   eventDate: string;
   status: string;
+  statusLabel: string;
   templateId: number | null;
   sourceType: string;
+  sourceTypeLabel: string;
   managerId: number | null;
 };
 

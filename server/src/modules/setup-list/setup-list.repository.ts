@@ -6,7 +6,21 @@ import {
   SetupListRecord
 } from './setup-list.types';
 
+const setupListStatusLabelMap: Record<string, string> = {
+  draft: '草稿',
+  in_progress: '进行中',
+  completed: '已完成'
+};
+
+const setupItemStatusLabelMap: Record<string, string> = {
+  pending: '待执行',
+  in_progress: '执行中',
+  done: '已完成'
+};
+
 function mapSetupList(row: Record<string, unknown>): SetupListRecord {
+  const status = String(row.status);
+
   return {
     id: Number(row.id),
     projectId: Number(row.project_id),
@@ -18,11 +32,14 @@ function mapSetupList(row: Record<string, unknown>): SetupListRecord {
     rehearsalAtSnapshot: row.rehearsal_at_snapshot ? String(row.rehearsal_at_snapshot) : null,
     moveOutAtSnapshot: row.move_out_at_snapshot ? String(row.move_out_at_snapshot) : null,
     remark: row.remark ? String(row.remark) : null,
-    status: String(row.status)
+    status,
+    statusLabel: setupListStatusLabelMap[status] || status
   };
 }
 
 function mapSetupListItem(row: Record<string, unknown>): SetupListItemRecord {
+  const executeStatus = String(row.execute_status);
+
   return {
     id: Number(row.id),
     setupListId: Number(row.setup_list_id),
@@ -34,7 +51,8 @@ function mapSetupListItem(row: Record<string, unknown>): SetupListItemRecord {
     quantity: Number(row.quantity),
     unit: String(row.unit),
     remark: row.remark ? String(row.remark) : null,
-    executeStatus: String(row.execute_status),
+    executeStatus,
+    executeStatusLabel: setupItemStatusLabelMap[executeStatus] || executeStatus,
     assigneeId: row.assignee_id ? Number(row.assignee_id) : null,
     completedAt: row.completed_at ? String(row.completed_at) : null,
     sortOrder: Number(row.sort_order)
