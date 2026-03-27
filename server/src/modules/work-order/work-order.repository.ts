@@ -132,15 +132,33 @@ export async function assignWorkOrder(id: number, assigneeId: number | null, rev
 }
 
 export async function updateWorkOrderStatus(id: number, input: UpdateWorkOrderStatusInput, userId: number): Promise<WorkOrderRecord | null> {
-  const setActualStart = input.status === 'in_progress' ? 'CURRENT_TIMESTAMP' : 'actual_start_at';
-  const setActualEnd = input.status === 'done' ? 'CURRENT_TIMESTAMP' : 'actual_end_at';
+  const transitions: Record<string, string[]> = {
+    pending_assign: ['in_progress'],
+    in_progress: ['pending_review'],
+    pending_review: ['approved', 'rejected'],
+    rejected: ['in_progress'],
+    approved: []
+  };
+
+  const current = await getWorkOrderById(id);
+
+  if (!current) {
+    return null;
+  }
+
+  if (!transitions[current.status]?.includes(input.status)) {
+    throw new Error(`invalid status transition: ${current.status} -> ${input.status}`);
+  }
+
+  const actualStart = input.status === 'in_progress' && !current.actualStartAt ? 'CURRENT_TIMESTAMP' : 'actual_start_at';
+  const actualEnd = input.status === 'approved' ? 'CURRENT_TIMESTAMP' : 'actual_end_at';
 
   const result = await pool.query(
     `UPDATE work_orders
      SET status = $2,
          assignee_id = COALESCE(assignee_id, $3),
-         actual_start_at = ${setActualStart},
-         actual_end_at = ${setActualEnd},
+         actual_start_at = ${actualStart},
+         actual_end_at = ${actualEnd},
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $1 AND is_deleted = FALSE
      RETURNING id, work_order_no, project_id, title, type, priority, status, assignee_id, reviewer_id,

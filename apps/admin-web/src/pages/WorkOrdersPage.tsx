@@ -128,6 +128,7 @@ export function WorkOrdersPage() {
             { key: 'priority', title: '优先级' },
             { key: 'status', title: '状态' },
             { key: 'assigneeId', title: '执行人', render: (item) => (item.assigneeId ? userMap[item.assigneeId] || item.assigneeId : '未分配') },
+            { key: 'reviewerText', title: '审核人', render: (item) => (item.reviewerId ? userMap[item.reviewerId] || item.reviewerId : '未设置') },
             {
               key: 'reviewerId',
               title: '审核人',

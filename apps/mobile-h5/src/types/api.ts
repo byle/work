@@ -23,6 +23,18 @@ export type LoginResult = {
   user: AuthUser;
 };
 
+export type Attachment = {
+  id: number;
+  bizType: string;
+  bizId: number;
+  fileName: string;
+  fileUrl: string;
+  fileType: string | null;
+  fileSize: number | null;
+  uploadedBy: number | null;
+  createdAt: string;
+};
+
 export type WorkOrder = {
   id: number;
   workOrderNo: string;
@@ -32,6 +44,7 @@ export type WorkOrder = {
   priority: string;
   status: string;
   assigneeId: number | null;
+  reviewerId: number | null;
   plannedStartAt?: string | null;
   plannedEndAt?: string | null;
   actualStartAt?: string | null;

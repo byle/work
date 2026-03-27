@@ -1,4 +1,4 @@
-import { ApiResponse, AuthUser, LoginResult, PaginatedData, TodoSummary, WorkOrder } from '../types/api';
+import { ApiResponse, Attachment, AuthUser, LoginResult, PaginatedData, TodoSummary, WorkOrder } from '../types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3000';
 const TOKEN_KEY = 'stage-workflow-mobile-token';
@@ -89,5 +89,16 @@ export function updateWorkOrderStatus(workOrderId: number, status: string) {
   return request<WorkOrder>(`/api/work-orders/${workOrderId}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status })
+  });
+}
+
+export function fetchAttachments(workOrderId: number) {
+  return request<Attachment[]>(`/api/attachments/work_order/${workOrderId}`);
+}
+
+export function uploadAttachment(workOrderId: number, payload: { fileName: string; fileType?: string; contentBase64: string }) {
+  return request<Attachment>(`/api/attachments/work_order/${workOrderId}`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
   });
 }

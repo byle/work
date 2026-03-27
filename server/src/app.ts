@@ -1,5 +1,7 @@
 import express from 'express';
+import path from 'path';
 import { env } from './config/env';
+import { attachmentRouter } from './modules/attachment/attachment.router';
 import { authRouter } from './modules/auth/auth.router';
 import { importExportRouter } from './modules/import-export/import-export.router';
 import { projectRouter } from './modules/project/project.router';
@@ -30,7 +32,8 @@ export function createApp() {
     next();
   });
 
-  app.use(express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '20mb' }));
+  app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true, service: 'server' });
@@ -43,6 +46,7 @@ export function createApp() {
   app.use('/api/work-orders', workOrderRouter);
   app.use('/api/setup-lists', setupListRouter);
   app.use('/api/import-export', importExportRouter);
+  app.use('/api/attachments', attachmentRouter);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error(err);

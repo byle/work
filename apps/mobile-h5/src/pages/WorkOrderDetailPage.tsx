@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { BackButton } from '../components/BackButton';
 import { InfoCard } from '../components/InfoCard';
 import { StatusBanner } from '../components/StatusBanner';
-import { fetchWorkOrderDetail, updateWorkOrderStatus } from '../lib/api';
-import { WorkOrder } from '../types/api';
+import { fetchAttachments, fetchWorkOrderDetail, updateWorkOrderStatus, uploadAttachment } from '../lib/api';
+import { Attachment, WorkOrder } from '../types/api';
 
 type WorkOrderDetailPageProps = {
   workOrderId: number;
@@ -12,15 +12,17 @@ type WorkOrderDetailPageProps = {
 
 export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPageProps) {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
-    fetchWorkOrderDetail(workOrderId)
-      .then((data) => {
-        setWorkOrder(data);
+    Promise.all([fetchWorkOrderDetail(workOrderId), fetchAttachments(workOrderId)])
+      .then(([detail, attachmentList]) => {
+        setWorkOrder(detail);
+        setAttachments(attachmentList);
         setError(null);
       })
       .catch((err: Error) => {
@@ -48,6 +50,29 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
     }
   };
 
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+
+    const contentBase64 = btoa(binary);
+    await uploadAttachment(workOrderId, {
+      fileName: file.name,
+      fileType: file.type,
+      contentBase64
+    });
+    await load();
+  };
+
   return (
     <>
       <BackButton onClick={onBack} />
@@ -60,15 +85,27 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
             <div>优先级：{workOrder.priority}</div>
             <div>状态：{workOrder.status}</div>
             <div>执行人：{workOrder.assigneeId ?? '未分配'}</div>
-            <div>计划开始：{workOrder.plannedStartAt || '未设置'}</div>
-            <div>计划结束：{workOrder.plannedEndAt || '未设置'}</div>
-            <div>实际开始：{workOrder.actualStartAt || '未开始'}</div>
-            <div>实际结束：{workOrder.actualEndAt || '未完成'}</div>
+            <div>审核人：{workOrder.reviewerId ?? '未设置'}</div>
             <div>说明：{workOrder.description || '暂无说明'}</div>
           </div>
           <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
-            <button onClick={() => handleStatusChange('in_progress')} disabled={saving} style={{ border: 'none', background: '#2563eb', color: '#fff', padding: 12, borderRadius: 10 }}>开始执行</button>
-            <button onClick={() => handleStatusChange('done')} disabled={saving} style={{ border: 'none', background: '#059669', color: '#fff', padding: 12, borderRadius: 10 }}>标记完成</button>
+            {workOrder.status === 'pending_assign' || workOrder.status === 'rejected' ? <button onClick={() => handleStatusChange('in_progress')} disabled={saving} style={{ border: 'none', background: '#2563eb', color: '#fff', padding: 12, borderRadius: 10 }}>开始执行</button> : null}
+            {workOrder.status === 'in_progress' ? <button onClick={() => handleStatusChange('pending_review')} disabled={saving} style={{ border: 'none', background: '#f59e0b', color: '#fff', padding: 12, borderRadius: 10 }}>提交审核</button> : null}
+            {workOrder.status === 'pending_review' ? <button onClick={() => handleStatusChange('approved')} disabled={saving} style={{ border: 'none', background: '#059669', color: '#fff', padding: 12, borderRadius: 10 }}>审核通过</button> : null}
+            {workOrder.status === 'pending_review' ? <button onClick={() => handleStatusChange('rejected')} disabled={saving} style={{ border: 'none', background: '#dc2626', color: '#fff', padding: 12, borderRadius: 10 }}>驳回返工</button> : null}
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <label style={{ display: 'inline-block', background: '#f3f4f6', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
+              上传现场附件
+              <input type="file" onChange={handleFileChange} style={{ display: 'none' }} />
+            </label>
+          </div>
+          <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
+            {attachments.map((item) => (
+              <a key={item.id} href={`http://127.0.0.1:3000${item.fileUrl}`} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>
+                {item.fileName}
+              </a>
+            ))}
           </div>
         </InfoCard>
       ) : null}
