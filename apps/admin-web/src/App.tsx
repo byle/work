@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Layout } from './components/Layout';
 import { clearToken, fetchMe, login, logout } from './lib/api';
 import { DashboardPage } from './pages/DashboardPage';
+import { DictionariesPage } from './pages/DictionariesPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SetupListsPage } from './pages/SetupListsPage';
@@ -10,7 +11,7 @@ import { UsersPage } from './pages/UsersPage';
 import { WorkOrdersPage } from './pages/WorkOrdersPage';
 import { AuthUser } from './types/api';
 
-type TabKey = 'dashboard' | 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
+type TabKey = 'dashboard' | 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users' | 'dictionaries';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
@@ -57,6 +58,7 @@ export default function App() {
     if (activeTab === 'projects') return <ProjectsPage />;
     if (activeTab === 'workOrders') return <WorkOrdersPage />;
     if (activeTab === 'users') return <UsersPage />;
+    if (activeTab === 'dictionaries') return <DictionariesPage />;
     return <SetupListsPage />;
   }, [activeTab]);
 

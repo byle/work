@@ -211,3 +211,16 @@ export function exportSetupListItems(setupListId: number) {
 export function fetchAuditLogs(bizType: string, bizId: number) {
   return request<Array<{ id: number; action: string; operatorId: number | null; remark: string | null; createdAt: string }>>(`/api/audit-logs/${bizType}/${bizId}`);
 }
+
+
+export function fetchDictionaryItems(dictType = '') {
+  const query = dictType ? `?dictType=${encodeURIComponent(dictType)}` : '';
+  return request<PaginatedData<{ id: number; dictType: string; itemValue: string; itemLabel: string; sortOrder: number; status: string }>>(`/api/dictionaries${query}`);
+}
+
+export function saveDictionaryItem(payload: Record<string, unknown>) {
+  return request<{ id: number; dictType: string; itemValue: string; itemLabel: string; sortOrder: number; status: string }>(`/api/dictionaries`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}

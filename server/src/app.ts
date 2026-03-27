@@ -3,6 +3,7 @@ import path from 'path';
 import { env } from './config/env';
 import { attachmentRouter } from './modules/attachment/attachment.router';
 import { dashboardRouter } from './modules/dashboard/dashboard.router';
+import { dictionaryRouter } from './modules/dictionary/dictionary.router';
 import { auditRouter } from './modules/audit/audit.router';
 import { authRouter } from './modules/auth/auth.router';
 import { importExportRouter } from './modules/import-export/import-export.router';
@@ -43,6 +44,7 @@ export function createApp() {
 
   app.use('/api/auth', authRouter);
   app.use('/api/users', userRouter);
+  app.use('/api/dictionaries', dictionaryRouter);
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/project-templates', templateRouter);
   app.use('/api/projects', projectRouter);

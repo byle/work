@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { AuthUser } from '../types/api';
 
-type TabKey = 'dashboard' | 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
+type TabKey = 'dashboard' | 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users' | 'dictionaries';
 
 type LayoutProps = {
   activeTab: TabKey;
@@ -17,7 +17,8 @@ const tabs: Array<{ key: TabKey; label: string; roles?: string[] }> = [
   { key: 'projects', label: '项目列表' },
   { key: 'workOrders', label: '工单列表' },
   { key: 'setupLists', label: '清单列表' },
-  { key: 'users', label: '用户角色', roles: ['admin', 'dispatcher'] }
+  { key: 'users', label: '用户角色', roles: ['admin', 'dispatcher'] },
+  { key: 'dictionaries', label: '数据字典', roles: ['admin', 'dispatcher'] }
 ];
 
 export function Layout({ activeTab, onChangeTab, children, user, onLogout }: LayoutProps) {

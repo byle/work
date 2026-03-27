@@ -143,3 +143,12 @@ export type ImportResult = {
   failCount: number;
   errors: string[];
 };
+
+export type DictionaryItem = {
+  id: number;
+  dictType: string;
+  itemValue: string;
+  itemLabel: string;
+  sortOrder: number;
+  status: string;
+};
