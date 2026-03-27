@@ -8,6 +8,7 @@ import { auditRouter } from './modules/audit/audit.router';
 import { authRouter } from './modules/auth/auth.router';
 import { importExportRouter } from './modules/import-export/import-export.router';
 import { projectRouter } from './modules/project/project.router';
+import { printRouter } from './modules/print/print.router';
 import { setupListRouter } from './modules/setup-list/setup-list.router';
 import { templateRouter } from './modules/template/template.router';
 import { userRouter } from './modules/user/user.router';
@@ -48,6 +49,7 @@ export function createApp() {
   app.use('/api/dashboard', dashboardRouter);
   app.use('/api/project-templates', templateRouter);
   app.use('/api/projects', projectRouter);
+  app.use('/api/print', printRouter);
   app.use('/api/work-orders', workOrderRouter);
   app.use('/api/setup-lists', setupListRouter);
   app.use('/api/import-export', importExportRouter);
