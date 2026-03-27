@@ -78,9 +78,9 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
         <InfoCard title={workOrder.title} description={`工单编号：${workOrder.workOrderNo}`}>
           <div style={{ display: 'grid', gap: 8, fontSize: 14 }}>
             <div>项目 ID：{workOrder.projectId}</div>
-            <div>工单类型：{getWorkOrderTypeLabel(workOrder.type)}</div>
-            <div>优先级：{getWorkOrderPriorityLabel(workOrder.priority)}</div>
-            <div>状态：{getWorkOrderStatusLabel(workOrder.status)}</div>
+            <div>工单类型：{workOrder.typeLabel || getWorkOrderTypeLabel(workOrder.type)}</div>
+            <div>优先级：{workOrder.priorityLabel || getWorkOrderPriorityLabel(workOrder.priority)}</div>
+            <div>状态：{workOrder.statusLabel || getWorkOrderStatusLabel(workOrder.status)}</div>
             <div>执行人：{workOrder.assigneeId ?? '未分配'}</div>
             <div>审核人：{workOrder.reviewerId ?? '未设置'}</div>
             <div>说明：{workOrder.description || '暂无说明'}</div>

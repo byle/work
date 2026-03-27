@@ -41,8 +41,11 @@ export type WorkOrder = {
   projectId: number;
   title: string;
   type: string;
+  typeLabel?: string;
   priority: string;
+  priorityLabel?: string;
   status: string;
+  statusLabel?: string;
   assigneeId: number | null;
   reviewerId: number | null;
   plannedStartAt?: string | null;

@@ -76,8 +76,10 @@ export type Project = {
   location: string;
   eventDate: string;
   status: string;
+  statusLabel?: string;
   templateId: number | null;
   sourceType: string;
+  sourceTypeLabel?: string;
   managerId: number | null;
   members?: ProjectMember[];
 };
@@ -88,8 +90,11 @@ export type WorkOrder = {
   projectId: number;
   title: string;
   type: string;
+  typeLabel?: string;
   priority: string;
+  priorityLabel?: string;
   status: string;
+  statusLabel?: string;
   assigneeId: number | null;
   reviewerId: number | null;
   plannedStartAt?: string | null;
@@ -111,6 +116,7 @@ export type SetupList = {
   moveOutAtSnapshot: string | null;
   remark: string | null;
   status: string;
+  statusLabel?: string;
 };
 
 export type SetupListItem = {
@@ -125,6 +131,7 @@ export type SetupListItem = {
   unit: string;
   remark: string | null;
   executeStatus: string;
+  executeStatusLabel?: string;
   assigneeId: number | null;
   completedAt: string | null;
   sortOrder: number;
