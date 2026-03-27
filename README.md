@@ -54,7 +54,19 @@ cp .env.example .env
 
 ## 文档索引
 
+### 部署与上线
+
 - 部署说明：`docs/deployment/DEPLOY.md`
 - 上线检查：`docs/deployment/GO-LIVE.md`
 - Nginx 示例：`docs/deployment/NGINX_EXAMPLE.md`
+
+### 演示与测试
+
 - 演示流程：`docs/demo/DEMO_FLOW.md`
+- 客户演示话术：`docs/demo/CLIENT_DEMO_SCRIPT.md`
+- 测试清单：`docs/testing/TEST_CASES.md`
+
+### 发布与交付
+
+- 发布说明：`docs/release/RELEASE_NOTES.md`
+- 交付检查单：`docs/delivery/DELIVERY_CHECKLIST.md`
