@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { asyncHandler } from '../../shared/async-handler';
-import { requireAuth } from '../../shared/auth';
+import { requireAuth, requireRole } from '../../shared/auth';
 import { success } from '../../shared/http';
-import { createWorkOrder, getWorkOrderById, listWorkOrders } from './work-order.repository';
+import { assignWorkOrder, createWorkOrder, getWorkOrderById, listMyWorkOrders, listWorkOrders, updateWorkOrderStatus } from './work-order.repository';
 
 export const workOrderRouter = Router();
 
@@ -10,8 +10,9 @@ workOrderRouter.use(requireAuth);
 
 workOrderRouter.get(
   '/',
-  asyncHandler(async (_req, res) => {
-    const workOrders = await listWorkOrders();
+  asyncHandler(async (req, res) => {
+    const mine = req.query.mine === 'true';
+    const workOrders = mine && req.user ? await listMyWorkOrders(req.user.id) : await listWorkOrders();
 
     return success(res, {
       list: workOrders,
@@ -24,6 +25,7 @@ workOrderRouter.get(
 
 workOrderRouter.post(
   '/',
+  requireRole(['admin', 'dispatcher']),
   asyncHandler(async (req, res) => {
     const workOrder = await createWorkOrder(req.body);
 
@@ -40,13 +42,21 @@ workOrderRouter.get(
   })
 );
 
-workOrderRouter.patch('/:id/status', (req, res) => {
-  return success(
-    res,
-    {
-      id: Number(req.params.id),
-      status: req.body.status || 'pending_assign'
-    },
-    'work order status updated'
-  );
-});
+workOrderRouter.patch(
+  '/:id/assign',
+  requireRole(['admin', 'dispatcher']),
+  asyncHandler(async (req, res) => {
+    const workOrder = await assignWorkOrder(Number(req.params.id), req.body.assigneeId ?? null);
+
+    return success(res, workOrder, 'work order assigned');
+  })
+);
+
+workOrderRouter.patch(
+  '/:id/status',
+  asyncHandler(async (req, res) => {
+    const workOrder = await updateWorkOrderStatus(Number(req.params.id), req.body, req.user!.id);
+
+    return success(res, workOrder, 'work order status updated');
+  })
+);

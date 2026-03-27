@@ -18,6 +18,14 @@ export type AuthUser = {
   roles: string[];
 };
 
+export type User = {
+  id: number;
+  username: string;
+  realName: string;
+  status: string;
+  roles: string[];
+};
+
 export type LoginResult = {
   token: string;
   user: AuthUser;
@@ -65,6 +73,11 @@ export type WorkOrder = {
   priority: string;
   status: string;
   assigneeId: number | null;
+  plannedStartAt?: string | null;
+  plannedEndAt?: string | null;
+  actualStartAt?: string | null;
+  actualEndAt?: string | null;
+  description?: string | null;
 };
 
 export type SetupList = {

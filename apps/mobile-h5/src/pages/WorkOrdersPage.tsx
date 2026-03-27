@@ -30,31 +30,16 @@ export function WorkOrdersPage({ onOpenDetail }: WorkOrdersPageProps) {
   return (
     <>
       <StatusBanner loading={loading} error={error} />
-      {workOrders.length === 0 && !loading && !error ? <InfoCard title="暂无工单" description="当前没有可展示的工单。" /> : null}
+      {workOrders.length === 0 && !loading && !error ? <InfoCard title="暂无工单" description="当前没有分配给你的工单。" /> : null}
       {workOrders.map((workOrder) => (
-        <InfoCard
-          key={workOrder.id}
-          title={workOrder.title}
-          description={`工单编号：${workOrder.workOrderNo}`}
-        >
+        <InfoCard key={workOrder.id} title={workOrder.title} description={`工单编号：${workOrder.workOrderNo}`}>
           <div style={{ display: 'grid', gap: 6, fontSize: 14 }}>
             <div>项目 ID：{workOrder.projectId}</div>
             <div>类型：{workOrder.type}</div>
             <div>优先级：{workOrder.priority}</div>
             <div>状态：{workOrder.status}</div>
           </div>
-          <button
-            onClick={() => onOpenDetail(workOrder.id)}
-            style={{
-              marginTop: 12,
-              border: 'none',
-              background: '#2563eb',
-              color: '#fff',
-              padding: '10px 12px',
-              borderRadius: 10,
-              width: '100%'
-            }}
-          >
+          <button onClick={() => onOpenDetail(workOrder.id)} style={{ marginTop: 12, border: 'none', background: '#2563eb', color: '#fff', padding: '10px 12px', borderRadius: 10, width: '100%' }}>
             查看详情
           </button>
         </InfoCard>

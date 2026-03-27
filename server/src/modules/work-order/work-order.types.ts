@@ -35,3 +35,7 @@ export type CreateWorkOrderInput = {
   plannedEndAt?: string;
   description?: string;
 };
+
+export type UpdateWorkOrderStatusInput = {
+  status: string;
+};

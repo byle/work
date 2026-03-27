@@ -30,13 +30,13 @@ export function TodoPage() {
   return (
     <>
       <StatusBanner loading={loading} error={error} />
-      <InfoCard title="待处理工单" description="需要尽快分配或开始执行的工单数量。">
+      <InfoCard title="待处理工单" description="需要尽快认领或开始执行的工单数量。">
         <strong style={{ fontSize: 28 }}>{summary.totalPending}</strong>
       </InfoCard>
       <InfoCard title="执行中工单" description="现场正在处理中的任务数量。">
         <strong style={{ fontSize: 28 }}>{summary.totalInProgress}</strong>
       </InfoCard>
-      <InfoCard title="关联项目数" description="当前工单涉及到的项目数量。">
+      <InfoCard title="关联项目数" description="当前我的工单涉及到的项目数量。">
         <strong style={{ fontSize: 28 }}>{summary.totalProjects}</strong>
       </InfoCard>
     </>

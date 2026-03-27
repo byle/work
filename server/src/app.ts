@@ -5,6 +5,7 @@ import { importExportRouter } from './modules/import-export/import-export.router
 import { projectRouter } from './modules/project/project.router';
 import { setupListRouter } from './modules/setup-list/setup-list.router';
 import { templateRouter } from './modules/template/template.router';
+import { userRouter } from './modules/user/user.router';
 import { workOrderRouter } from './modules/work-order/work-order.router';
 import { failure } from './shared/http';
 
@@ -36,6 +37,7 @@ export function createApp() {
   });
 
   app.use('/api/auth', authRouter);
+  app.use('/api/users', userRouter);
   app.use('/api/project-templates', templateRouter);
   app.use('/api/projects', projectRouter);
   app.use('/api/work-orders', workOrderRouter);

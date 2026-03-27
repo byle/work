@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { AuthUser } from '../types/api';
 
-type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists';
+type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
 
 type LayoutProps = {
   activeTab: TabKey;
@@ -11,14 +11,17 @@ type LayoutProps = {
   onLogout: () => void;
 };
 
-const tabs: Array<{ key: TabKey; label: string }> = [
-  { key: 'templates', label: '项目模板' },
+const tabs: Array<{ key: TabKey; label: string; roles?: string[] }> = [
+  { key: 'templates', label: '项目模板', roles: ['admin', 'dispatcher'] },
   { key: 'projects', label: '项目列表' },
   { key: 'workOrders', label: '工单列表' },
-  { key: 'setupLists', label: '清单列表' }
+  { key: 'setupLists', label: '清单列表' },
+  { key: 'users', label: '用户角色', roles: ['admin', 'dispatcher'] }
 ];
 
 export function Layout({ activeTab, onChangeTab, children, user, onLogout }: LayoutProps) {
+  const visibleTabs = tabs.filter((tab) => !tab.roles || tab.roles.some((role) => user.roles.includes(role)));
+
   return (
     <div style={{ minHeight: '100vh', background: '#f5f7fb', color: '#1f2937' }}>
       <header style={{ padding: '20px 24px', background: '#111827', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -34,7 +37,7 @@ export function Layout({ activeTab, onChangeTab, children, user, onLogout }: Lay
       </header>
       <div style={{ display: 'flex' }}>
         <aside style={{ width: 220, background: '#fff', borderRight: '1px solid #e5e7eb', padding: 16 }}>
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const active = tab.key === activeTab;
             return (
               <button

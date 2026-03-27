@@ -8,6 +8,7 @@ import {
   ProjectTemplate,
   SetupList,
   SetupListItem,
+  User,
   WorkOrder
 } from '../types/api';
 
@@ -47,6 +48,10 @@ async function request<T>(path: string, options?: RequestInit, skipAuth = false)
     throw new Error('请先登录');
   }
 
+  if (response.status === 403) {
+    throw new Error('没有权限执行该操作');
+  }
+
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
@@ -67,10 +72,14 @@ async function request<T>(path: string, options?: RequestInit, skipAuth = false)
 }
 
 export async function login(payload: { username: string; password: string }) {
-  const result = await request<LoginResult>('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  }, true);
+  const result = await request<LoginResult>(
+    '/api/auth/login',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    },
+    true
+  );
 
   setToken(result.token);
   return result;
@@ -82,6 +91,17 @@ export function fetchMe() {
 
 export function logout() {
   return request<boolean>('/api/auth/logout', { method: 'POST' });
+}
+
+export function fetchUsers() {
+  return request<PaginatedData<User>>('/api/users');
+}
+
+export function createUser(payload: Record<string, unknown>) {
+  return request<User>('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
 }
 
 export function fetchProjectTemplates() {
@@ -114,6 +134,13 @@ export function createWorkOrder(payload: Record<string, unknown>) {
   return request<WorkOrder>('/api/work-orders', {
     method: 'POST',
     body: JSON.stringify(payload)
+  });
+}
+
+export function assignWorkOrder(workOrderId: number, assigneeId: number | null) {
+  return request<WorkOrder>(`/api/work-orders/${workOrderId}/assign`, {
+    method: 'PATCH',
+    body: JSON.stringify({ assigneeId })
   });
 }
 

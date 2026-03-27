@@ -11,6 +11,18 @@ export type PaginatedData<T> = {
   total: number;
 };
 
+export type AuthUser = {
+  id: number;
+  username: string;
+  realName: string;
+  roles: string[];
+};
+
+export type LoginResult = {
+  token: string;
+  user: AuthUser;
+};
+
 export type WorkOrder = {
   id: number;
   workOrderNo: string;

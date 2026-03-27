@@ -10,6 +10,14 @@ export type UserRecord = {
   roles: string[];
 };
 
+export type UserListItem = {
+  id: number;
+  username: string;
+  realName: string;
+  status: string;
+  roles: string[];
+};
+
 function hashPassword(password: string) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
@@ -23,6 +31,55 @@ function mapUser(row: Record<string, unknown>): UserRecord {
     status: String(row.status),
     roles: Array.isArray(row.roles) ? row.roles.map(String) : []
   };
+}
+
+function mapUserListItem(row: Record<string, unknown>): UserListItem {
+  return {
+    id: Number(row.id),
+    username: String(row.username),
+    realName: String(row.real_name),
+    status: String(row.status),
+    roles: Array.isArray(row.roles) ? row.roles.map(String) : []
+  };
+}
+
+export async function listUsers(): Promise<UserListItem[]> {
+  const result = await pool.query(
+    `SELECT u.id, u.username, u.real_name, u.status,
+            COALESCE(array_agg(r.code) FILTER (WHERE r.code IS NOT NULL), '{}') AS roles
+     FROM users u
+     LEFT JOIN user_roles ur ON ur.user_id = u.id
+     LEFT JOIN roles r ON r.id = ur.role_id
+     WHERE u.is_deleted = FALSE
+     GROUP BY u.id
+     ORDER BY u.id ASC`
+  );
+
+  return result.rows.map((row) => mapUserListItem(row as Record<string, unknown>));
+}
+
+export async function createUser(input: { username: string; password: string; realName: string; roleCodes: string[] }) {
+  const passwordHash = hashPassword(input.password);
+
+  const userResult = await pool.query(
+    `INSERT INTO users (username, password_hash, real_name, status)
+     VALUES ($1, $2, $3, 'active')
+     RETURNING id`,
+    [input.username, passwordHash, input.realName]
+  );
+
+  const userId = Number(userResult.rows[0].id);
+
+  for (const roleCode of input.roleCodes) {
+    await pool.query(
+      `INSERT INTO user_roles (user_id, role_id)
+       SELECT $1, id FROM roles WHERE code = $2
+       ON CONFLICT (user_id, role_id) DO NOTHING`,
+      [userId, roleCode]
+    );
+  }
+
+  return findUserById(userId);
 }
 
 export async function findUserByUsername(username: string): Promise<UserRecord | null> {
@@ -99,21 +156,32 @@ export async function seedDefaultAdmin() {
      ON CONFLICT (code) DO NOTHING`
   );
 
-  const adminPasswordHash = hashPassword('admin123');
+  const seedUsers = [
+    { username: 'admin', realName: '系统管理员', password: 'admin123', roles: ['admin'] },
+    { username: 'dispatcher', realName: '调度员', password: 'dispatcher123', roles: ['dispatcher'] },
+    { username: 'site01', realName: '现场执行1', password: 'site123', roles: ['site'] }
+  ];
 
-  await pool.query(
-    `INSERT INTO users (username, password_hash, real_name, status)
-     VALUES ('admin', $1, '系统管理员', 'active')
-     ON CONFLICT (username) DO NOTHING`,
-    [adminPasswordHash]
-  );
+  for (const item of seedUsers) {
+    const passwordHash = hashPassword(item.password);
 
-  await pool.query(
-    `INSERT INTO user_roles (user_id, role_id)
-     SELECT u.id, r.id
-     FROM users u
-     CROSS JOIN roles r
-     WHERE u.username = 'admin' AND r.code = 'admin'
-     ON CONFLICT (user_id, role_id) DO NOTHING`
-  );
+    await pool.query(
+      `INSERT INTO users (username, password_hash, real_name, status)
+       VALUES ($1, $2, $3, 'active')
+       ON CONFLICT (username) DO NOTHING`,
+      [item.username, passwordHash, item.realName]
+    );
+
+    for (const roleCode of item.roles) {
+      await pool.query(
+        `INSERT INTO user_roles (user_id, role_id)
+         SELECT u.id, r.id
+         FROM users u
+         CROSS JOIN roles r
+         WHERE u.username = $1 AND r.code = $2
+         ON CONFLICT (user_id, role_id) DO NOTHING`,
+        [item.username, roleCode]
+      );
+    }
+  }
 }

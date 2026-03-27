@@ -5,10 +5,11 @@ import { LoginPage } from './pages/LoginPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SetupListsPage } from './pages/SetupListsPage';
 import { TemplatesPage } from './pages/TemplatesPage';
+import { UsersPage } from './pages/UsersPage';
 import { WorkOrdersPage } from './pages/WorkOrdersPage';
 import { AuthUser } from './types/api';
 
-type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists';
+type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('templates');
@@ -60,6 +61,10 @@ export default function App() {
 
     if (activeTab === 'workOrders') {
       return <WorkOrdersPage />;
+    }
+
+    if (activeTab === 'users') {
+      return <UsersPage />;
     }
 
     return <SetupListsPage />;
