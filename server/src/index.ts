@@ -1,9 +1,11 @@
 import { createApp } from './app';
 import { env } from './config/env';
+import { ensureAuditLogTable } from './modules/audit/audit.repository';
 import { seedDefaultAdmin } from './modules/auth/auth.repository';
 import { seedDefaultTemplates } from './modules/template/template.repository';
 
 async function bootstrap() {
+  await ensureAuditLogTable();
   await seedDefaultAdmin();
   await seedDefaultTemplates();
 

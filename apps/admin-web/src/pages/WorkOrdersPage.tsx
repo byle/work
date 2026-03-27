@@ -5,7 +5,7 @@ import { FormField } from '../components/FormField';
 import { FormSelect } from '../components/FormSelect';
 import { LoadState } from '../components/LoadState';
 import { PageSection } from '../components/PageSection';
-import { assignWorkOrder, createWorkOrder, fetchProjects, fetchUsers, fetchWorkOrders } from '../lib/api';
+import { assignWorkOrder, createWorkOrder, fetchAuditLogs, fetchProjects, fetchUsers, fetchWorkOrders } from '../lib/api';
 import { Project, User, WorkOrder } from '../types/api';
 
 const initialForm = {
@@ -20,6 +20,7 @@ export function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [logsText, setLogsText] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,18 +55,12 @@ export function WorkOrdersPage() {
   }, []);
 
   const projectOptions = useMemo(
-    () => [
-      { label: '请选择项目', value: '' },
-      ...projects.map((project) => ({ label: `${project.name} (${project.projectNo})`, value: String(project.id) }))
-    ],
+    () => [{ label: '请选择项目', value: '' }, ...projects.map((project) => ({ label: `${project.name} (${project.projectNo})`, value: String(project.id) }))],
     [projects]
   );
 
   const assigneeOptions = useMemo(
-    () => [
-      { label: '未分配', value: '' },
-      ...users.filter((user) => user.roles.includes('site') || user.roles.includes('dispatcher')).map((user) => ({ label: `${user.realName} (${user.username})`, value: String(user.id) }))
-    ],
+    () => [{ label: '未分配', value: '' }, ...users.filter((user) => user.roles.includes('site') || user.roles.includes('dispatcher')).map((user) => ({ label: `${user.realName} (${user.username})`, value: String(user.id) }))],
     [users]
   );
 
@@ -106,6 +101,11 @@ export function WorkOrdersPage() {
     }
   };
 
+  const handleViewLogs = async (workOrderId: number) => {
+    const logs = await fetchAuditLogs('work_order', workOrderId);
+    setLogsText(logs.map((item) => `${item.createdAt} | ${item.action} | 操作人:${item.operatorId ?? '-'} | ${item.remark ?? ''}`).join('\n') || '暂无日志');
+  };
+
   return (
     <PageSection title="工单列表" description="查看工单类型、优先级、状态和关联项目，并进行执行人/审核人配置。">
       <FormCard title="新建工单" description="可同时设置审核人，后续再指派执行人。" onSubmit={handleSubmit} submitting={submitting}>
@@ -115,6 +115,7 @@ export function WorkOrdersPage() {
         <FormField label="优先级" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} required />
         <FormSelect label="审核人" options={reviewerOptions} value={form.reviewerId} onChange={(e) => setForm({ ...form, reviewerId: e.target.value })} />
       </FormCard>
+      {logsText ? <pre style={{ background: '#fff', padding: 16, borderRadius: 12, border: '1px solid #e5e7eb', whiteSpace: 'pre-wrap', marginBottom: 20 }}>{logsText}</pre> : null}
       <LoadState loading={loading} error={error} />
       {!loading && !error ? (
         <DataTable
@@ -131,18 +132,10 @@ export function WorkOrdersPage() {
             { key: 'reviewerText', title: '审核人', render: (item) => (item.reviewerId ? userMap[item.reviewerId] || item.reviewerId : '未设置') },
             {
               key: 'reviewerId',
-              title: '审核人',
+              title: '审核人设置',
               render: (item) => (
-                <select
-                  value={reviewerDraft[item.id] ?? ''}
-                  onChange={(e) => setReviewerDraft((current) => ({ ...current, [item.id]: e.target.value }))}
-                  style={{ padding: 8, borderRadius: 8, border: '1px solid #d1d5db' }}
-                >
-                  {reviewerOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                <select value={reviewerDraft[item.id] ?? ''} onChange={(e) => setReviewerDraft((current) => ({ ...current, [item.id]: e.target.value }))} style={{ padding: 8, borderRadius: 8, border: '1px solid #d1d5db' }}>
+                  {reviewerOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               )
             },
@@ -150,18 +143,12 @@ export function WorkOrdersPage() {
               key: 'assign',
               title: '指派',
               render: (item) => (
-                <select
-                  value={item.assigneeId ? String(item.assigneeId) : ''}
-                  onChange={(e) => handleAssign(item.id, e.target.value)}
-                  disabled={assigningId === item.id}
-                  style={{ padding: 8, borderRadius: 8, border: '1px solid #d1d5db' }}
-                >
-                  {assigneeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <select value={item.assigneeId ? String(item.assigneeId) : ''} onChange={(e) => handleAssign(item.id, e.target.value)} disabled={assigningId === item.id} style={{ padding: 8, borderRadius: 8, border: '1px solid #d1d5db' }}>
+                    {assigneeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                  <button onClick={() => handleViewLogs(item.id)} style={{ border: 'none', background: '#e0e7ff', color: '#3730a3', padding: '6px 10px', borderRadius: 8 }}>日志</button>
+                </div>
               )
             }
           ]}

@@ -189,3 +189,8 @@ export function importSetupListItems(setupListId: number, rows: Record<string, u
 export function exportSetupListItems(setupListId: number) {
   return request<string>(`/api/import-export/setup-lists/${setupListId}/items/export`);
 }
+
+
+export function fetchAuditLogs(bizType: string, bizId: number) {
+  return request<Array<{ id: number; action: string; operatorId: number | null; remark: string | null; createdAt: string }>>(`/api/audit-logs/${bizType}/${bizId}`);
+}

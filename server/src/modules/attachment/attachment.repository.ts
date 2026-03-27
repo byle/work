@@ -67,3 +67,22 @@ export async function createAttachment(input: {
 
   return mapAttachment(result.rows[0] as Record<string, unknown>);
 }
+
+export async function deleteAttachment(id: number) {
+  const result = await pool.query(
+    `DELETE FROM attachments
+     WHERE id = $1
+     RETURNING id, file_url`,
+    [id]
+  );
+
+  if (result.rowCount === 0) {
+    return false;
+  }
+
+  const fileUrl = String(result.rows[0].file_url);
+  const filePath = path.resolve(process.cwd(), fileUrl.replace(/^\//, ''));
+
+  await fs.rm(filePath, { force: true });
+  return true;
+}

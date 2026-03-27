@@ -1,3 +1,4 @@
+import { createAuditLog } from '../audit/audit.repository';
 import { pool } from '../../db/pool';
 import { CreateWorkOrderInput, UpdateWorkOrderStatusInput, WorkOrderListItem, WorkOrderRecord } from './work-order.types';
 
@@ -108,7 +109,9 @@ export async function createWorkOrder(input: CreateWorkOrderInput): Promise<Work
     ]
   );
 
-  return mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  await createAuditLog({ bizType: 'work_order', bizId: workOrder.id, action: 'create', remark: input.description ?? null });
+  return workOrder;
 }
 
 export async function assignWorkOrder(id: number, assigneeId: number | null, reviewerId?: number | null): Promise<WorkOrderRecord | null> {
@@ -128,10 +131,12 @@ export async function assignWorkOrder(id: number, assigneeId: number | null, rev
     return null;
   }
 
-  return mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  await createAuditLog({ bizType: 'work_order', bizId: id, action: 'assign', remark: `assignee=${assigneeId ?? 'null'}, reviewer=${reviewerId ?? 'keep'}` });
+  return workOrder;
 }
 
-export async function updateWorkOrderStatus(id: number, input: UpdateWorkOrderStatusInput, userId: number): Promise<WorkOrderRecord | null> {
+export async function updateWorkOrderStatus(id: number, input: UpdateWorkOrderStatusInput & { remark?: string }, userId: number): Promise<WorkOrderRecord | null> {
   const transitions: Record<string, string[]> = {
     pending_assign: ['in_progress'],
     in_progress: ['pending_review'],
@@ -155,20 +160,23 @@ export async function updateWorkOrderStatus(id: number, input: UpdateWorkOrderSt
 
   const result = await pool.query(
     `UPDATE work_orders
-     SET status = $2,
+     SET status = $2::text,
          assignee_id = COALESCE(assignee_id, $3),
+         description = CASE WHEN $4::text IS NULL OR $4::text = '' THEN description ELSE concat(COALESCE(description, ''), CASE WHEN COALESCE(description, '') = '' THEN '' ELSE '\n' END, '[', $2::text, '] ', $4::text) END,
          actual_start_at = ${actualStart},
          actual_end_at = ${actualEnd},
          updated_at = CURRENT_TIMESTAMP
      WHERE id = $1 AND is_deleted = FALSE
      RETURNING id, work_order_no, project_id, title, type, priority, status, assignee_id, reviewer_id,
                planned_start_at, planned_end_at, actual_start_at, actual_end_at, description`,
-    [id, input.status, userId]
+    [id, input.status, userId, input.remark ?? null]
   );
 
   if (result.rowCount === 0) {
     return null;
   }
 
-  return mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  const workOrder = mapWorkOrder(result.rows[0] as Record<string, unknown>);
+  await createAuditLog({ bizType: 'work_order', bizId: id, action: `status:${input.status}`, operatorId: userId, remark: input.remark ?? null });
+  return workOrder;
 }

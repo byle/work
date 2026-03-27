@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { BackButton } from '../components/BackButton';
 import { InfoCard } from '../components/InfoCard';
 import { StatusBanner } from '../components/StatusBanner';
-import { fetchAttachments, fetchWorkOrderDetail, updateWorkOrderStatus, uploadAttachment } from '../lib/api';
+import { deleteAttachment, fetchAttachments, fetchWorkOrderDetail, updateWorkOrderStatus, uploadAttachment } from '../lib/api';
 import { Attachment, WorkOrder } from '../types/api';
 
 type WorkOrderDetailPageProps = {
@@ -13,6 +13,7 @@ type WorkOrderDetailPageProps = {
 export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPageProps) {
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [remark, setRemark] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +41,9 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
   const handleStatusChange = async (status: string) => {
     setSaving(true);
     try {
-      const result = await updateWorkOrderStatus(workOrderId, status);
+      const result = await updateWorkOrderStatus(workOrderId, status, remark);
       setWorkOrder(result);
+      setRemark('');
       setError(null);
     } catch (err) {
       setError((err as Error).message);
@@ -73,6 +75,11 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
     await load();
   };
 
+  const handleDeleteAttachment = async (attachmentId: number) => {
+    await deleteAttachment(attachmentId);
+    await load();
+  };
+
   return (
     <>
       <BackButton onClick={onBack} />
@@ -88,6 +95,7 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
             <div>审核人：{workOrder.reviewerId ?? '未设置'}</div>
             <div>说明：{workOrder.description || '暂无说明'}</div>
           </div>
+          <textarea value={remark} onChange={(e) => setRemark(e.target.value)} placeholder="输入执行备注或审核意见" style={{ width: '100%', minHeight: 80, marginTop: 16, borderRadius: 10, border: '1px solid #d1d5db', padding: 12 }} />
           <div style={{ display: 'grid', gap: 10, marginTop: 16 }}>
             {workOrder.status === 'pending_assign' || workOrder.status === 'rejected' ? <button onClick={() => handleStatusChange('in_progress')} disabled={saving} style={{ border: 'none', background: '#2563eb', color: '#fff', padding: 12, borderRadius: 10 }}>开始执行</button> : null}
             {workOrder.status === 'in_progress' ? <button onClick={() => handleStatusChange('pending_review')} disabled={saving} style={{ border: 'none', background: '#f59e0b', color: '#fff', padding: 12, borderRadius: 10 }}>提交审核</button> : null}
@@ -102,9 +110,12 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
           </div>
           <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
             {attachments.map((item) => (
-              <a key={item.id} href={`http://127.0.0.1:3000${item.fileUrl}`} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>
-                {item.fileName}
-              </a>
+              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <a href={`http://127.0.0.1:3000${item.fileUrl}`} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>
+                  {item.fileName}
+                </a>
+                <button onClick={() => handleDeleteAttachment(item.id)} style={{ border: 'none', background: '#fee2e2', color: '#b91c1c', padding: '6px 10px', borderRadius: 8 }}>删除</button>
+              </div>
             ))}
           </div>
         </InfoCard>

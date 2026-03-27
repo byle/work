@@ -85,10 +85,10 @@ export function fetchWorkOrderDetail(workOrderId: number) {
   return request<WorkOrder>(`/api/work-orders/${workOrderId}`);
 }
 
-export function updateWorkOrderStatus(workOrderId: number, status: string) {
+export function updateWorkOrderStatus(workOrderId: number, status: string, remark?: string) {
   return request<WorkOrder>(`/api/work-orders/${workOrderId}/status`, {
     method: 'PATCH',
-    body: JSON.stringify({ status })
+    body: JSON.stringify({ status, remark: remark ?? '' })
   });
 }
 
@@ -100,5 +100,11 @@ export function uploadAttachment(workOrderId: number, payload: { fileName: strin
   return request<Attachment>(`/api/attachments/work_order/${workOrderId}`, {
     method: 'POST',
     body: JSON.stringify(payload)
+  });
+}
+
+export function deleteAttachment(attachmentId: number) {
+  return request<boolean>(`/api/attachments/items/${attachmentId}`, {
+    method: 'DELETE'
   });
 }

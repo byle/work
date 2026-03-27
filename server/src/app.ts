@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { env } from './config/env';
 import { attachmentRouter } from './modules/attachment/attachment.router';
+import { auditRouter } from './modules/audit/audit.router';
 import { authRouter } from './modules/auth/auth.router';
 import { importExportRouter } from './modules/import-export/import-export.router';
 import { projectRouter } from './modules/project/project.router';
@@ -47,6 +48,7 @@ export function createApp() {
   app.use('/api/setup-lists', setupListRouter);
   app.use('/api/import-export', importExportRouter);
   app.use('/api/attachments', attachmentRouter);
+  app.use('/api/audit-logs', auditRouter);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error(err);

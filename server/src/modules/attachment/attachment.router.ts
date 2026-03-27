@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../../shared/async-handler';
 import { requireAuth } from '../../shared/auth';
 import { success } from '../../shared/http';
-import { createAttachment, listAttachments } from './attachment.repository';
+import { createAttachment, deleteAttachment, listAttachments } from './attachment.repository';
 
 export const attachmentRouter = Router();
 
@@ -33,5 +33,13 @@ attachmentRouter.post(
     });
 
     return success(res, attachment, 'attachment uploaded');
+  })
+);
+
+attachmentRouter.delete(
+  '/items/:id',
+  asyncHandler(async (req, res) => {
+    const deleted = await deleteAttachment(Number(req.params.id));
+    return success(res, deleted, 'attachment deleted');
   })
 );
