@@ -1,6 +1,7 @@
 import {
   ApiResponse,
   AuthUser,
+  DashboardSummary,
   ImportResult,
   LoginResult,
   PaginatedData,
@@ -93,6 +94,10 @@ export function logout() {
   return request<boolean>('/api/auth/logout', { method: 'POST' });
 }
 
+export function fetchDashboardSummary() {
+  return request<DashboardSummary>('/api/dashboard/summary');
+}
+
 export function fetchUsers() {
   return request<PaginatedData<User>>('/api/users');
 }
@@ -115,8 +120,13 @@ export function createProjectTemplate(payload: Record<string, unknown>) {
   });
 }
 
-export function fetchProjects() {
-  return request<PaginatedData<Project>>('/api/projects');
+export function fetchProjects(keyword = '') {
+  const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+  return request<PaginatedData<Project>>(`/api/projects${query}`);
+}
+
+export function fetchProjectDetail(projectId: number) {
+  return request<Project>(`/api/projects/${projectId}`);
 }
 
 export function createProject(payload: Record<string, unknown>) {
@@ -126,8 +136,16 @@ export function createProject(payload: Record<string, unknown>) {
   });
 }
 
-export function fetchWorkOrders() {
-  return request<PaginatedData<WorkOrder>>('/api/work-orders');
+export function fetchWorkOrders(keyword = '', status = '') {
+  const params = new URLSearchParams();
+  if (keyword) params.set('keyword', keyword);
+  if (status) params.set('status', status);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return request<PaginatedData<WorkOrder>>(`/api/work-orders${query}`);
+}
+
+export function fetchWorkOrderDetail(workOrderId: number) {
+  return request<WorkOrder>(`/api/work-orders/${workOrderId}`);
 }
 
 export function createWorkOrder(payload: Record<string, unknown>) {
@@ -189,7 +207,6 @@ export function importSetupListItems(setupListId: number, rows: Record<string, u
 export function exportSetupListItems(setupListId: number) {
   return request<string>(`/api/import-export/setup-lists/${setupListId}/items/export`);
 }
-
 
 export function fetchAuditLogs(bizType: string, bizId: number) {
   return request<Array<{ id: number; action: string; operatorId: number | null; remark: string | null; createdAt: string }>>(`/api/audit-logs/${bizType}/${bizId}`);

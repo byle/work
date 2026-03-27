@@ -12,7 +12,9 @@ workOrderRouter.get(
   '/',
   asyncHandler(async (req, res) => {
     const mine = req.query.mine === 'true';
-    const workOrders = mine && req.user ? await listMyWorkOrders(req.user.id) : await listWorkOrders();
+    const keyword = typeof req.query.keyword === 'string' ? req.query.keyword : undefined;
+    const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+    const workOrders = mine && req.user ? await listMyWorkOrders(req.user.id) : await listWorkOrders(keyword, status);
 
     return success(res, {
       list: workOrders,

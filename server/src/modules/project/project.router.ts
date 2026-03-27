@@ -10,8 +10,8 @@ projectRouter.use(requireAuth);
 
 projectRouter.get(
   '/',
-  asyncHandler(async (_req, res) => {
-    const projects = await listProjects();
+  asyncHandler(async (req, res) => {
+    const projects = await listProjects(typeof req.query.keyword === 'string' ? req.query.keyword : undefined);
 
     return success(res, {
       list: projects,

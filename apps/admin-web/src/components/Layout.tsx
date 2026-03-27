@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { AuthUser } from '../types/api';
 
-type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
+type TabKey = 'dashboard' | 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
 
 type LayoutProps = {
   activeTab: TabKey;
@@ -12,6 +12,7 @@ type LayoutProps = {
 };
 
 const tabs: Array<{ key: TabKey; label: string; roles?: string[] }> = [
+  { key: 'dashboard', label: '统计看板' },
   { key: 'templates', label: '项目模板', roles: ['admin', 'dispatcher'] },
   { key: 'projects', label: '项目列表' },
   { key: 'workOrders', label: '工单列表' },
@@ -43,18 +44,7 @@ export function Layout({ activeTab, onChangeTab, children, user, onLogout }: Lay
               <button
                 key={tab.key}
                 onClick={() => onChangeTab(tab.key)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '12px 14px',
-                  marginBottom: 8,
-                  borderRadius: 10,
-                  border: 'none',
-                  background: active ? '#2563eb' : '#f3f4f6',
-                  color: active ? '#fff' : '#111827',
-                  cursor: 'pointer'
-                }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: 8, borderRadius: 10, border: 'none', background: active ? '#2563eb' : '#f3f4f6', color: active ? '#fff' : '#111827', cursor: 'pointer' }}
               >
                 {tab.label}
               </button>

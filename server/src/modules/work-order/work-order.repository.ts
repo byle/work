@@ -35,13 +35,16 @@ function mapWorkOrderListItem(row: Record<string, unknown>): WorkOrderListItem {
   };
 }
 
-export async function listWorkOrders(): Promise<WorkOrderListItem[]> {
+export async function listWorkOrders(keyword?: string, status?: string): Promise<WorkOrderListItem[]> {
   const result = await pool.query(
     `SELECT id, work_order_no, project_id, title, type, priority, status, assignee_id, reviewer_id
      FROM work_orders
      WHERE is_deleted = FALSE
+       AND ($1::text IS NULL OR title ILIKE concat('%', $1::text, '%') OR work_order_no ILIKE concat('%', $1::text, '%'))
+       AND ($2::text IS NULL OR status = $2::text)
      ORDER BY id DESC
-     LIMIT 100`
+     LIMIT 100`,
+    [keyword || null, status || null]
   );
 
   return result.rows.map((row) => mapWorkOrderListItem(row as Record<string, unknown>));

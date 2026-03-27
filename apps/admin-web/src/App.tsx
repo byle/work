@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Layout } from './components/Layout';
 import { clearToken, fetchMe, login, logout } from './lib/api';
+import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { SetupListsPage } from './pages/SetupListsPage';
@@ -9,10 +10,10 @@ import { UsersPage } from './pages/UsersPage';
 import { WorkOrdersPage } from './pages/WorkOrdersPage';
 import { AuthUser } from './types/api';
 
-type TabKey = 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
+type TabKey = 'dashboard' | 'templates' | 'projects' | 'workOrders' | 'setupLists' | 'users';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabKey>('templates');
+  const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -51,36 +52,16 @@ export default function App() {
   };
 
   const content = useMemo(() => {
-    if (activeTab === 'templates') {
-      return <TemplatesPage />;
-    }
-
-    if (activeTab === 'projects') {
-      return <ProjectsPage />;
-    }
-
-    if (activeTab === 'workOrders') {
-      return <WorkOrdersPage />;
-    }
-
-    if (activeTab === 'users') {
-      return <UsersPage />;
-    }
-
+    if (activeTab === 'dashboard') return <DashboardPage />;
+    if (activeTab === 'templates') return <TemplatesPage />;
+    if (activeTab === 'projects') return <ProjectsPage />;
+    if (activeTab === 'workOrders') return <WorkOrdersPage />;
+    if (activeTab === 'users') return <UsersPage />;
     return <SetupListsPage />;
   }, [activeTab]);
 
-  if (loading) {
-    return <div style={{ padding: 24 }}>加载中...</div>;
-  }
+  if (loading) return <div style={{ padding: 24 }}>加载中...</div>;
+  if (!user) return <LoginPage onLogin={handleLogin} error={authError} />;
 
-  if (!user) {
-    return <LoginPage onLogin={handleLogin} error={authError} />;
-  }
-
-  return (
-    <Layout activeTab={activeTab} onChangeTab={setActiveTab} user={user} onLogout={handleLogout}>
-      {content}
-    </Layout>
-  );
+  return <Layout activeTab={activeTab} onChangeTab={setActiveTab} user={user} onLogout={handleLogout}>{content}</Layout>;
 }

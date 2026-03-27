@@ -114,13 +114,15 @@ async function createWorkOrdersFromTemplate(project: ProjectRecord) {
   }
 }
 
-export async function listProjects(): Promise<ProjectListItem[]> {
+export async function listProjects(keyword?: string): Promise<ProjectListItem[]> {
   const result = await pool.query(
     `SELECT id, project_no, name, location, event_date, status, template_id, source_type, manager_id
      FROM projects
      WHERE is_deleted = FALSE
+       AND ($1::text IS NULL OR name ILIKE concat('%', $1::text, '%') OR project_no ILIKE concat('%', $1::text, '%') OR location ILIKE concat('%', $1::text, '%'))
      ORDER BY event_date DESC, id DESC
-     LIMIT 100`
+     LIMIT 100`,
+    [keyword || null]
   );
 
   return result.rows.map((row) => ({

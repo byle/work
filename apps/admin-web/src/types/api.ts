@@ -11,6 +11,16 @@ export type PaginatedData<T> = {
   total: number;
 };
 
+export type DashboardSummary = {
+  projectsTotal: number;
+  projectsDraft: number;
+  workOrdersTotal: number;
+  workOrdersPending: number;
+  workOrdersInProgress: number;
+  workOrdersApproved: number;
+  setupListsTotal: number;
+};
+
 export type AuthUser = {
   id: number;
   username: string;
