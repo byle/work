@@ -213,14 +213,24 @@ export function fetchAuditLogs(bizType: string, bizId: number) {
 }
 
 
-export function fetchDictionaryItems(dictType = '') {
-  const query = dictType ? `?dictType=${encodeURIComponent(dictType)}` : '';
+export function fetchDictionaryItems(dictType = '', keyword = '') {
+  const params = new URLSearchParams();
+  if (dictType) params.set('dictType', dictType);
+  if (keyword) params.set('keyword', keyword);
+  const query = params.toString() ? `?${params.toString()}` : '';
   return request<PaginatedData<{ id: number; dictType: string; itemValue: string; itemLabel: string; sortOrder: number; status: string }>>(`/api/dictionaries${query}`);
 }
 
 export function saveDictionaryItem(payload: Record<string, unknown>) {
   return request<{ id: number; dictType: string; itemValue: string; itemLabel: string; sortOrder: number; status: string }>(`/api/dictionaries`, {
     method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateDictionaryItem(id: number, payload: Record<string, unknown>) {
+  return request<{ id: number; dictType: string; itemValue: string; itemLabel: string; sortOrder: number; status: string }>(`/api/dictionaries/${id}`, {
+    method: 'PATCH',
     body: JSON.stringify(payload)
   });
 }

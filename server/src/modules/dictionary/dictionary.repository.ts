@@ -76,13 +76,14 @@ export async function seedDictionaryItems() {
   }
 }
 
-export async function listDictionaryItems(dictType?: string) {
+export async function listDictionaryItems(dictType?: string, keyword?: string) {
   const result = await pool.query(
     `SELECT id, dict_type, item_value, item_label, sort_order, status
      FROM dictionary_items
      WHERE ($1::text IS NULL OR dict_type = $1::text)
+       AND ($2::text IS NULL OR item_value ILIKE concat('%', $2::text, '%') OR item_label ILIKE concat('%', $2::text, '%'))
      ORDER BY dict_type ASC, sort_order ASC, id ASC`,
-    [dictType || null]
+    [dictType || null, keyword || null]
   );
 
   return result.rows.map((row) => mapItem(row as Record<string, unknown>));
@@ -110,6 +111,24 @@ export async function upsertDictionaryItem(input: {
   return mapItem(result.rows[0] as Record<string, unknown>);
 }
 
+export async function updateDictionaryItem(id: number, input: { itemLabel?: string; sortOrder?: number; status?: string }) {
+  const result = await pool.query(
+    `UPDATE dictionary_items
+     SET item_label = COALESCE($2::text, item_label),
+         sort_order = COALESCE($3::int, sort_order),
+         status = COALESCE($4::text, status),
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1
+     RETURNING id, dict_type, item_value, item_label, sort_order, status`,
+    [id, input.itemLabel ?? null, input.sortOrder ?? null, input.status ?? null]
+  );
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  return mapItem(result.rows[0] as Record<string, unknown>);
+}
 
 export async function getDictionaryLabelMap(dictType: string) {
   const items = await listDictionaryItems(dictType);
