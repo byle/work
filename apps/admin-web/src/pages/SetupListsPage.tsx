@@ -17,6 +17,7 @@ import {
   updateSetupListItem
 } from '../lib/api';
 import { Project, SetupList, SetupListItem } from '../types/api';
+import { formatChinaDateTime } from '../lib/format';
 import { getSetupItemStatusLabel, getSetupListStatusLabel } from '../lib/dicts';
 
 const initialForm = {
@@ -302,7 +303,7 @@ export function SetupListsPage() {
       <LoadState loading={loading} error={error} />
       {!loading && !error ? (
         <>
-          <DataTable data={setupLists} emptyText="当前还没有搭建清单数据。" columns={[{ key: 'title', title: '清单标题' }, { key: 'projectId', title: '项目 ID' }, { key: 'projectNameSnapshot', title: '项目快照' }, { key: 'locationSnapshot', title: '地点快照' }, { key: 'eventDateSnapshot', title: '活动时间' }, { key: 'status', title: '状态', render: (item) => item.statusLabel || getSetupListStatusLabel(item.status) }, { key: 'print', title: '打印', render: (item) => <button onClick={() => window.open(`/api/print/setup-lists/${item.id}`, '_blank')} style={{ border: 'none', background: '#dcfce7', color: '#166534', padding: '6px 10px', borderRadius: 8 }}>打印</button> }]} />
+          <DataTable data={setupLists} emptyText="当前还没有搭建清单数据。" columns={[{ key: 'title', title: '清单标题' }, { key: 'projectId', title: '项目 ID' }, { key: 'projectNameSnapshot', title: '项目快照' }, { key: 'locationSnapshot', title: '地点快照' }, { key: 'eventDateSnapshot', title: '活动时间', render: (item) => formatChinaDateTime(item.eventDateSnapshot) }, { key: 'status', title: '状态', render: (item) => item.statusLabel || getSetupListStatusLabel(item.status) }, { key: 'print', title: '打印', render: (item) => <button onClick={() => window.open(`/api/print/setup-lists/${item.id}`, '_blank')} style={{ border: 'none', background: '#dcfce7', color: '#166534', padding: '6px 10px', borderRadius: 8 }}>打印</button> }]} />
           <div style={{ height: 20 }} />
           <DataTable data={setupListItems} emptyText="当前所选清单还没有明细数据。" columns={[{ key: 'sequenceNo', title: '序号' }, { key: 'categoryName', title: '分类' }, { key: 'itemName', title: '内容' }, { key: 'specification', title: '规格' }, { key: 'quantity', title: '数量' }, { key: 'unit', title: '单位' }, { key: 'remark', title: '备注' }, { key: 'executeStatus', title: '执行状态', render: (item) => item.executeStatusLabel || getSetupItemStatusLabel(item.executeStatus) }, { key: 'action', title: '操作', render: (item) => (<div style={{ display: 'flex', gap: 8 }}><button onClick={() => handleEditItem(item)} style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>编辑</button><button onClick={() => handleDeleteItem(item)} style={{ border: 'none', background: '#fee2e2', color: '#b91c1c', padding: '6px 10px', borderRadius: 8, cursor: 'pointer' }}>删除</button></div>) }]} />
         </>

@@ -6,6 +6,7 @@ import { FormSelect } from '../components/FormSelect';
 import { LoadState } from '../components/LoadState';
 import { PageSection } from '../components/PageSection';
 import { createProject, fetchProjectDetail, fetchProjectTemplates, fetchProjects, fetchUsers } from '../lib/api';
+import { formatChinaDateTime } from '../lib/format';
 import { getProjectStatusLabel } from '../lib/dicts';
 import { Project, ProjectTemplate, User } from '../types/api';
 
@@ -122,7 +123,7 @@ export function ProjectsPage() {
       </div>
       {detail ? <pre style={{ background: '#fff', padding: 16, borderRadius: 12, border: '1px solid #e5e7eb', whiteSpace: 'pre-wrap', marginBottom: 20 }}>{JSON.stringify({ ...detail, managerName: detail.managerId ? userMap[detail.managerId] : null }, null, 2)}</pre> : null}
       <LoadState loading={loading} error={error} />
-      {!loading && !error ? <DataTable data={projects} emptyText="当前还没有项目数据。" columns={[{ key: 'projectNo', title: '项目编号' }, { key: 'name', title: '项目名称' }, { key: 'location', title: '项目地点' }, { key: 'eventAt', title: '活动时间', render: (item) => item.eventAt || item.eventDate }, { key: 'managerId', title: '负责人', render: (item) => (item.managerId ? userMap[item.managerId] || item.managerId : '未设置') }, { key: 'sourceType', title: '来源' }, { key: 'status', title: '状态', render: (item) => item.statusLabel || getProjectStatusLabel(item.status) }, { key: 'detail', title: '操作', render: (item) => <div style={{ display: 'flex', gap: 8 }}><button onClick={() => handleViewDetail(item.id)} style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8 }}>查看</button><button onClick={() => window.open(`/api/print/projects/${item.id}`, '_blank')} style={{ border: 'none', background: '#dcfce7', color: '#166534', padding: '6px 10px', borderRadius: 8 }}>打印</button></div> }]} /> : null}
+      {!loading && !error ? <DataTable data={projects} emptyText="当前还没有项目数据。" columns={[{ key: 'projectNo', title: '项目编号' }, { key: 'name', title: '项目名称' }, { key: 'location', title: '项目地点' }, { key: 'eventAt', title: '活动时间', render: (item) => formatChinaDateTime(item.eventAt || item.eventDate) }, { key: 'managerId', title: '负责人', render: (item) => (item.managerId ? userMap[item.managerId] || item.managerId : '未设置') }, { key: 'sourceType', title: '来源' }, { key: 'status', title: '状态', render: (item) => item.statusLabel || getProjectStatusLabel(item.status) }, { key: 'detail', title: '操作', render: (item) => <div style={{ display: 'flex', gap: 8 }}><button onClick={() => handleViewDetail(item.id)} style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8 }}>查看</button><button onClick={() => window.open(`/api/print/projects/${item.id}`, '_blank')} style={{ border: 'none', background: '#dcfce7', color: '#166534', padding: '6px 10px', borderRadius: 8 }}>打印</button></div> }]} /> : null}
     </PageSection>
   );
 }

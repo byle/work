@@ -3,6 +3,7 @@ import { BackButton } from '../components/BackButton';
 import { InfoCard } from '../components/InfoCard';
 import { StatusBanner } from '../components/StatusBanner';
 import { getWorkOrderPriorityLabel, getWorkOrderStatusLabel, getWorkOrderTypeLabel } from '../lib/dicts';
+import { formatChinaDateTime } from '../lib/format';
 import { deleteAttachment, fetchAttachments, fetchWorkOrderDetail, updateWorkOrderStatus, uploadAttachment } from '../lib/api';
 import { Attachment, WorkOrder } from '../types/api';
 
@@ -83,6 +84,10 @@ export function WorkOrderDetailPage({ workOrderId, onBack }: WorkOrderDetailPage
             <div>状态：{workOrder.statusLabel || getWorkOrderStatusLabel(workOrder.status)}</div>
             <div>执行人：{workOrder.assigneeId ?? '未分配'}</div>
             <div>审核人：{workOrder.reviewerId ?? '未设置'}</div>
+            <div>计划开始：{formatChinaDateTime(workOrder.plannedStartAt)}</div>
+            <div>计划结束：{formatChinaDateTime(workOrder.plannedEndAt)}</div>
+            <div>实际开始：{formatChinaDateTime(workOrder.actualStartAt)}</div>
+            <div>实际结束：{formatChinaDateTime(workOrder.actualEndAt)}</div>
             <div>说明：{workOrder.description || '暂无说明'}</div>
           </div>
           <textarea value={remark} onChange={(e) => setRemark(e.target.value)} placeholder="输入执行备注或审核意见" style={{ width: '100%', minHeight: 80, marginTop: 16, borderRadius: 10, border: '1px solid #d1d5db', padding: 12 }} />
