@@ -14,6 +14,7 @@
 - 附件上传 / 删除 / 查看
 - 审计日志
 - 后台统计看板 / 搜索 / 详情查看
+- Docker 一键部署 / 启停 / 备份脚本
 
 ## 技术栈
 
@@ -51,6 +52,9 @@ cp .env.example .env
 ./scripts/backup-db.sh
 ```
 
-## 部署文档
+## 文档索引
 
-详见：`docs/deployment/DEPLOY.md`
+- 部署说明：`docs/deployment/DEPLOY.md`
+- 上线检查：`docs/deployment/GO-LIVE.md`
+- Nginx 示例：`docs/deployment/NGINX_EXAMPLE.md`
+- 演示流程：`docs/demo/DEMO_FLOW.md`
