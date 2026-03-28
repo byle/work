@@ -120,8 +120,11 @@ export function createProjectTemplate(payload: Record<string, unknown>) {
   });
 }
 
-export function fetchProjects(keyword = '') {
-  const query = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+export function fetchProjects(keyword = '', category = 'current') {
+  const params = new URLSearchParams();
+  if (keyword) params.set('keyword', keyword);
+  if (category) params.set('category', category);
+  const query = params.toString() ? `?${params.toString()}` : '';
   return request<PaginatedData<Project>>(`/api/projects${query}`);
 }
 
@@ -232,5 +235,18 @@ export function updateDictionaryItem(id: number, payload: Record<string, unknown
   return request<{ id: number; dictType: string; itemValue: string; itemLabel: string; sortOrder: number; status: string }>(`/api/dictionaries/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload)
+  });
+}
+
+export function completeProject(projectId: number) {
+  return request<Project>(`/api/projects/${projectId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'completed' })
+  });
+}
+
+export function deleteProject(projectId: number) {
+  return request<boolean>(`/api/projects/${projectId}`, {
+    method: 'DELETE'
   });
 }

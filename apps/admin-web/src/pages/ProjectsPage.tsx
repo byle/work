@@ -5,7 +5,7 @@ import { FormField } from '../components/FormField';
 import { FormSelect } from '../components/FormSelect';
 import { LoadState } from '../components/LoadState';
 import { PageSection } from '../components/PageSection';
-import { createProject, fetchProjectDetail, fetchProjectTemplates, fetchProjects, fetchUsers } from '../lib/api';
+import { completeProject, createProject, deleteProject, fetchProjectDetail, fetchProjectTemplates, fetchProjects, fetchUsers } from '../lib/api';
 import { formatChinaDateTime } from '../lib/format';
 import { getProjectStatusLabel } from '../lib/dicts';
 import { Project, ProjectTemplate, User } from '../types/api';
@@ -30,6 +30,7 @@ export function ProjectsPage() {
   const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [keyword, setKeyword] = useState('');
+  const [category, setCategory] = useState<'current' | 'history'>('current');
   const [detail, setDetail] = useState<Project | null>(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -39,7 +40,7 @@ export function ProjectsPage() {
 
   const loadProjects = () => {
     setLoading(true);
-    Promise.all([fetchProjects(keyword), fetchProjectTemplates(), fetchUsers()])
+    Promise.all([fetchProjects(keyword, category), fetchProjectTemplates(), fetchUsers()])
       .then(([projectData, templateData, userData]) => {
         setProjects(projectData.list);
         setTemplates(templateData.list);
@@ -52,7 +53,7 @@ export function ProjectsPage() {
 
   useEffect(() => {
     loadProjects();
-  }, [keyword]);
+  }, [keyword, category]);
 
   const templateOptions = useMemo(() => [{ label: '手动创建（不使用模板）', value: '' }, ...templates.map((item) => ({ label: item.name, value: String(item.id) }))], [templates]);
   const managerOptions = useMemo(() => [{ label: '请选择项目负责人', value: '' }, ...users.map((item) => ({ label: `${item.realName} (${item.username})`, value: String(item.id) }))], [users]);
@@ -94,8 +95,18 @@ export function ProjectsPage() {
     setDetail(data);
   };
 
+  const handleComplete = async (projectId: number) => {
+    await completeProject(projectId);
+    loadProjects();
+  };
+
+  const handleDelete = async (projectId: number) => {
+    await deleteProject(projectId);
+    loadProjects();
+  };
+
   return (
-    <PageSection title="项目列表" description="查看活动项目、时间、地点和当前状态，可基于模板一键创建工单。">
+    <PageSection title="项目列表" description="查看当前项目、历史项目，并支持完成与删除。">
       <FormCard title={`新建项目 · 第 ${step} 步`} description={step === 1 ? '先填写项目名称、地点、活动时间、布场时间、撤场时间。' : '再补充模板、负责人和项目成员。'} onSubmit={handleSubmit} submitting={submitting}>
         {step === 1 ? (
           <>
@@ -118,12 +129,13 @@ export function ProjectsPage() {
           </>
         )}
       </FormCard>
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, marginBottom: 20, display: 'grid', gap: 12, gridTemplateColumns: '1fr 220px' }}>
         <FormField label="搜索项目" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="项目名称 / 编号 / 地点" />
+        <FormSelect label="项目分组" options={[{ label: '当前项目', value: 'current' }, { label: '历史项目', value: 'history' }]} value={category} onChange={(e) => setCategory(e.target.value as 'current' | 'history')} />
       </div>
       {detail ? <pre style={{ background: '#fff', padding: 16, borderRadius: 12, border: '1px solid #e5e7eb', whiteSpace: 'pre-wrap', marginBottom: 20 }}>{JSON.stringify({ ...detail, managerName: detail.managerId ? userMap[detail.managerId] : null }, null, 2)}</pre> : null}
       <LoadState loading={loading} error={error} />
-      {!loading && !error ? <DataTable data={projects} emptyText="当前还没有项目数据。" columns={[{ key: 'projectNo', title: '项目编号' }, { key: 'name', title: '项目名称' }, { key: 'location', title: '项目地点' }, { key: 'eventAt', title: '活动时间', render: (item) => formatChinaDateTime(item.eventAt || item.eventDate) }, { key: 'managerId', title: '负责人', render: (item) => (item.managerId ? userMap[item.managerId] || item.managerId : '未设置') }, { key: 'sourceType', title: '来源' }, { key: 'status', title: '状态', render: (item) => item.statusLabel || getProjectStatusLabel(item.status) }, { key: 'detail', title: '操作', render: (item) => <div style={{ display: 'flex', gap: 8 }}><button onClick={() => handleViewDetail(item.id)} style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8 }}>查看</button><button onClick={() => window.open(`/api/print/projects/${item.id}`, '_blank')} style={{ border: 'none', background: '#dcfce7', color: '#166534', padding: '6px 10px', borderRadius: 8 }}>打印</button></div> }]} /> : null}
+      {!loading && !error ? <DataTable data={projects} emptyText={category === 'current' ? '当前还没有项目数据。' : '当前还没有历史项目。'} columns={[{ key: 'projectNo', title: '项目编号' }, { key: 'name', title: '项目名称' }, { key: 'location', title: '项目地点' }, { key: 'eventAt', title: '活动时间', render: (item) => formatChinaDateTime(item.eventAt || item.eventDate) }, { key: 'managerId', title: '负责人', render: (item) => (item.managerId ? userMap[item.managerId] || item.managerId : '未设置') }, { key: 'sourceType', title: '来源' }, { key: 'status', title: '状态', render: (item) => item.statusLabel || getProjectStatusLabel(item.status) }, { key: 'detail', title: '操作', render: (item) => <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button onClick={() => handleViewDetail(item.id)} style={{ border: 'none', background: '#dbeafe', color: '#1d4ed8', padding: '6px 10px', borderRadius: 8 }}>查看</button><button onClick={() => window.open(`/api/print/projects/${item.id}`, '_blank')} style={{ border: 'none', background: '#dcfce7', color: '#166534', padding: '6px 10px', borderRadius: 8 }}>打印</button>{category === 'current' ? <button onClick={() => handleComplete(item.id)} style={{ border: 'none', background: '#fef3c7', color: '#92400e', padding: '6px 10px', borderRadius: 8 }}>已完成</button> : null}<button onClick={() => handleDelete(item.id)} style={{ border: 'none', background: '#fee2e2', color: '#b91c1c', padding: '6px 10px', borderRadius: 8 }}>删除</button></div> }]} /> : null}
     </PageSection>
   );
 }

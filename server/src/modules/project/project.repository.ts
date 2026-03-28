@@ -132,16 +132,20 @@ async function createWorkOrdersFromTemplate(project: ProjectRecord) {
   }
 }
 
-export async function listProjects(keyword?: string): Promise<ProjectListItem[]> {
+export async function listProjects(keyword?: string, category: 'current' | 'history' = 'current'): Promise<ProjectListItem[]> {
   const [result, labels] = await Promise.all([
     pool.query(
       `SELECT id, project_no, name, location, event_date, rehearsal_at, status, template_id, source_type, manager_id
        FROM projects
        WHERE is_deleted = FALSE
          AND ($1::text IS NULL OR name ILIKE concat('%', $1::text, '%') OR project_no ILIKE concat('%', $1::text, '%') OR location ILIKE concat('%', $1::text, '%'))
+         AND (
+           ($2::text = 'current' AND status <> 'completed') OR
+           ($2::text = 'history' AND status = 'completed')
+         )
        ORDER BY event_date DESC, id DESC
        LIMIT 100`,
-      [keyword || null]
+      [keyword || null, category]
     ),
     getProjectLabels()
   ]);
@@ -226,4 +230,36 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectR
 
   project.members = await listProjectMembers(project.id);
   return project;
+}
+
+export async function updateProjectStatus(id: number, status: string) {
+  const [result, labels] = await Promise.all([
+    pool.query(
+      `UPDATE projects
+       SET status = $2::text,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND is_deleted = FALSE
+       RETURNING id, project_no, name, location, event_date, move_in_at, rehearsal_at, move_out_at, status, template_id, source_type, manager_id`,
+      [id, status]
+    ),
+    getProjectLabels()
+  ]);
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  return mapProject(result.rows[0] as Record<string, unknown>, labels);
+}
+
+export async function deleteProject(id: number) {
+  const result = await pool.query(
+    `UPDATE projects
+     SET is_deleted = TRUE,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND is_deleted = FALSE`,
+    [id]
+  );
+
+  return (result.rowCount ?? 0) > 0;
 }
