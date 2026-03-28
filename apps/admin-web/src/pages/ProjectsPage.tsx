@@ -101,6 +101,12 @@ export function ProjectsPage() {
   };
 
   const handleDelete = async (projectId: number) => {
+    const confirmed = window.confirm('确认删除这个项目吗？删除后将不再出现在项目列表中。');
+
+    if (!confirmed) {
+      return;
+    }
+
     await deleteProject(projectId);
     loadProjects();
   };
